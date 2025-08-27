@@ -1,0 +1,40 @@
+{
+  "name": "aggregation-app",
+  "private": true,
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n NEXT,INNGEST \"next dev\" \"inngest dev\"",
+    "next": "next dev",
+    "inngest:dev": "inngest dev",
+    "build": "next build",
+    "start": "next start",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@inngest/agent-kit": "latest",
+    "@prisma/client": "latest",
+    "@supabase/supabase-js": "latest",
+    "inngest": "latest",
+    "next": "latest",
+    "openai": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "concurrently": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "inngest-cli": "latest",
+    "prisma": "latest",
+    "typescript": "latest"
+  }
+}

@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------ APP SCHEMA TABLES ------------------
+model Organization {
+  id            String       @id @default(cuid())
+  name          String
+  primaryDomain String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  aliases       OrgAlias[]
+  keywords      OrgKeyword[]
+}
+
+model OrgAlias {
+  id             String       @id @default(cuid())
+  organizationId String
+  value          String
+  Organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model OrgKeyword {
+  id             String       @id @default(cuid())
+  organizationId String
+  value          String
+  Organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model DiscoveryResult {
+  id             String   @id @default(cuid())
+  organizationId String
+  url            String
+  title          String?
+  description    String?
+  discoveredAt   DateTime @default(now())
+  status         String   // queued | scraped | failed | discarded
+  hash           String   // sha256(url)
+
+  @@unique([hash])
+}
+
+model RawDocument {
+  id            String   @id @default(cuid())
+  discoveryId   String   @unique
+  url           String
+  html          String?
+  markdown      String?
+  text          String?
+  httpStatus    Int?
+  fetchedAt     DateTime @default(now())
+}
+
+model Enrichment {
+  id            String   @id @default(cuid())
+  discoveryId   String   @unique
+  title         String?
+  author        String?
+  publishedAt   DateTime?
+  summary       String?
+  keywords      String[]
+  sentiment     String?   // pos | neu | neg
+  entitiesJson  Json?
+  canonicalUrl  String?
+}
+
+model ArticleSignal {
+  id            String   @id @default(cuid())
+  discoveryId   String   @unique
+  relevance     Float
+  quality       Float
+  duplicateOf   String?
+  publishable   Boolean
+}
+
+model DocumentEmbedding {
+  id           String   @id @default(cuid())
+  discoveryId  String   @unique
+  provider     String
+  dim          Int
+  embedding    Bytes    // @db.Vector(3072) -- TODO: Enable when pgvector is properly configured
+}
