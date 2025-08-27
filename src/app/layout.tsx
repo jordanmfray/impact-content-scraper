@@ -1,6 +1,9 @@
 import "@radix-ui/themes/styles.css";
+import { Inter } from "next/font/google";
 import { Theme, Flex } from "@radix-ui/themes";
 import { Sidebar } from "@/components/Sidebar";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: 'Aggregation App',
@@ -21,7 +24,7 @@ export default function RootLayout({
           }
         `}</style>
       </head>
-      <body>
+      <body className={inter.className}>
         <Theme>
           <Flex>
             <Sidebar />
