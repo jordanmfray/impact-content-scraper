@@ -22,7 +22,7 @@ export default async function Home() {
                   <Text weight="bold">Database</Text>
                   <Text size="2" color="gray">Supabase Studio Dashboard</Text>
                 </Flex>
-                <Link href="http://127.0.0.1:54321" target="_blank">
+                <Link href="http://localhost:54323" target="_blank">
                   <Button variant="soft">Open</Button>
                 </Link>
               </Flex>
