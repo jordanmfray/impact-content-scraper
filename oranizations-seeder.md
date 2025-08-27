@@ -1,14 +1,3 @@
-# Organizations to find articles, news, and other posts about
-
-## Organization Schema
-
-Model Organization
- - name
- - website
- - description
- - posts (relationship with articles/posts)
- - logo
-
 ## Organization list
 
 | Organization Name                                       | Description                                                                                                                                                                                               | Website URL                                                      |

@@ -11,25 +11,12 @@ datasource db {
 model Organization {
   id            String       @id @default(cuid())
   name          String
-  primaryDomain String?
+  description   String?
+  website       String?
+  logo          String?
+  bannerImage   String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  aliases       OrgAlias[]
-  keywords      OrgKeyword[]
-}
-
-model OrgAlias {
-  id             String       @id @default(cuid())
-  organizationId String
-  value          String
-  Organization   Organization @relation(fields: [organizationId], references: [id])
-}
-
-model OrgKeyword {
-  id             String       @id @default(cuid())
-  organizationId String
-  value          String
-  Organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model DiscoveryResult {
