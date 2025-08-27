@@ -1,4 +1,5 @@
 import "@radix-ui/themes/styles.css";
+import "../styles/fonts.css";
 import { Theme, Flex } from "@radix-ui/themes";
 import { Sidebar } from "@/components/Sidebar";
 
