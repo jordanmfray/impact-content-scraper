@@ -1,24 +1,27 @@
-async function fetchArticles() {
-  const base = process.env.PAYLOAD_SERVER_URL!
-  const r = await fetch(`${base}/api/articles?where[status][equals]=published`, { next: { revalidate: 60 } })
-  if (!r.ok) return []
-  const data = await r.json()
-  return data?.docs ?? []
-}
+import { Container, Heading, Text, Flex, Card } from "@radix-ui/themes";
 
-export default async function ArticlesPage() {
-  const articles = await fetchArticles()
+export default function ArticlesPage() {
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Articles</h1>
-      {articles.length === 0 && <p>No published articles yet.</p>}
-      <ul>
-        {articles.map((a: any) => (
-          <li key={a.id}>
-            <a href={`/articles/${a.slug || a.id}`}>{a.title || a.sourceUrl}</a>
-          </li>
-        ))}
-      </ul>
-    </main>
-  )
+    <Container size="4" style={{ padding: 24 }}>
+      <Flex direction="column" gap="6">
+        <Flex direction="column" gap="2">
+          <Heading size="8" weight="bold">Articles</Heading>
+          <Text size="4" color="gray">
+            Content aggregation and management
+          </Text>
+        </Flex>
+
+        <Card>
+          <Flex direction="column" gap="3" align="center" style={{ padding: 40 }}>
+            <Text size="5" weight="bold" color="gray">
+              Coming Soon
+            </Text>
+            <Text color="gray" style={{ textAlign: 'center' }}>
+              Article management will be available once Payload CMS is integrated.
+            </Text>
+          </Flex>
+        </Card>
+      </Flex>
+    </Container>
+  );
 }

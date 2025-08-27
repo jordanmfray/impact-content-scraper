@@ -1,5 +1,6 @@
 import "@radix-ui/themes/styles.css";
-import { Theme } from "@radix-ui/themes";
+import { Theme, Flex } from "@radix-ui/themes";
+import { Sidebar } from "@/components/Sidebar";
 
 export const metadata = {
   title: 'Aggregation App',
@@ -13,9 +14,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <style>{`
+          .nav-item:hover {
+            background-color: var(--gray-4) !important;
+          }
+        `}</style>
+      </head>
       <body>
         <Theme>
-          {children}
+          <Flex>
+            <Sidebar />
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              {children}
+            </div>
+          </Flex>
         </Theme>
       </body>
     </html>
