@@ -1,8 +1,10 @@
+// Inngest API route - currently unused since we're using direct execution
+// Can be removed or kept for future trigger-based functionality
+
 import { serve } from 'inngest/next'
-import { inngest } from '@/lib/inngest-client'
-import * as fns from '@/inngest/functions'
+import { inngest } from '@/inngest/client'
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: Object.values(fns),
+  functions: [],
 })
