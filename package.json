@@ -13,10 +13,13 @@
     "start": "next start",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
+    "seed:organizations": "tsx scripts/seed-organizations.ts",
+    "update:org-descriptions": "tsx scripts/update-organization-descriptions.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@inngest/agent-kit": "latest",
+    "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "latest",
     "@radix-ui/themes": "^3.2.1",
     "@supabase/supabase-js": "latest",
@@ -36,6 +39,7 @@
     "eslint-config-next": "latest",
     "inngest-cli": "latest",
     "prisma": "latest",
+    "tsx": "latest",
     "typescript": "latest"
   }
 }

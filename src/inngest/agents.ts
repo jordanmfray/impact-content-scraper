@@ -11,10 +11,9 @@ export const DiscoveryAgent = createAgent({
   run: async ({ input }) => {
     const org = await prisma.organization.findUnique({
       where: { id: input.organizationId },
-      include: { aliases: true, keywords: true },
     })
     if (!org) return { urls: [] }
-    const q = [org.name, ...org.keywords.map(k => k.value)].join(' ')
+    const q = org.name
     const res = await firecrawlSearch(q)
 
     const urls = res.items.map(i => ({ url: i.url, title: i.title }))
