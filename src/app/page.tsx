@@ -246,7 +246,7 @@ export default function Home() {
   const featuredIds = new Set(featuredArticles.map(article => article.id))
   const gridArticles = articles
     .filter(article => !featuredIds.has(article.id))
-    .slice(0, 4)
+    .slice(0, 46) // Show up to 46 grid articles (4 in spotlight + 46 in grid = 50 total)
 
   return (
     <Box style={{ 
