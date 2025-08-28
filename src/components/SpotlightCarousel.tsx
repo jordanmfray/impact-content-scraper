@@ -17,6 +17,7 @@ interface Article {
   sentiment: string | null
   keywords: string[]
   createdAt: Date
+  featured: boolean
   organization: {
     id: string
     name: string
@@ -38,16 +39,28 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [isHovering, setIsHovering] = useState(false)
 
-  // Filter for articles with images first, then fallback to all articles if needed
+  // Prioritize featured articles, then fallback to articles with images
   const spotlightArticles = useMemo(() => {
-    const articlesWithImages = articles.filter(article => article.ogImage && article.ogImage.trim() !== '')
+    // First, get featured articles
+    const featuredArticles = articles.filter(article => article.featured)
     
-    if (articlesWithImages.length >= 4) {
-      return articlesWithImages.slice(0, 4)
-    } else if (articlesWithImages.length > 0) {
-      return articlesWithImages.slice(0, Math.max(articlesWithImages.length, 1))
+    if (featuredArticles.length >= 4) {
+      return featuredArticles.slice(0, 4)
+    }
+    
+    // If we don't have enough featured articles, add non-featured articles with images
+    const remainingSlots = 4 - featuredArticles.length
+    const nonFeaturedWithImages = articles
+      .filter(article => !article.featured && article.ogImage && article.ogImage.trim() !== '')
+      .slice(0, remainingSlots)
+    
+    const combined = [...featuredArticles, ...nonFeaturedWithImages]
+    
+    if (combined.length > 0) {
+      return combined
     } else {
-      return articles.slice(0, 4) // Fallback to any articles if none have images
+      // Fallback to any articles if none have images or are featured
+      return articles.slice(0, 4)
     }
   }, [articles])
 

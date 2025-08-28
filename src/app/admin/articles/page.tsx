@@ -19,6 +19,7 @@ interface Article {
   createdAt: Date
   updatedAt: Date
   status: string
+  featured: boolean
   organization: {
     id: string
     name: string
@@ -79,6 +80,40 @@ export default function AdminArticlesPage() {
       console.error('Articles fetch error:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const toggleFeatured = async (articleId: string, currentFeatured: boolean) => {
+    try {
+      setIsUpdating(true)
+      const response = await fetch('/api/admin/articles', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: articleId,
+          featured: !currentFeatured
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Update the article in the local state
+        setArticles(prev => prev.map(article => 
+          article.id === articleId 
+            ? { ...article, featured: !currentFeatured }
+            : article
+        ))
+      } else {
+        setError(data.error || 'Failed to update featured status')
+      }
+    } catch (err) {
+      setError('Failed to update featured status')
+      console.error('Featured toggle error:', err)
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -334,6 +369,7 @@ export default function AdminArticlesPage() {
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeaderCell>State</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Featured</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Date Scraped</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Article Title</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>URL</Table.ColumnHeaderCell>
@@ -348,6 +384,17 @@ export default function AdminArticlesPage() {
                 <Table.Row key={article.id}>
                   <Table.Cell>
                     {getStatusBadge(article.status)}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size="1"
+                      variant={article.featured ? "solid" : "soft"}
+                      color={article.featured ? "orange" : "gray"}
+                      onClick={() => toggleFeatured(article.id, article.featured)}
+                      disabled={isUpdating}
+                    >
+                      {article.featured ? "★" : "☆"}
+                    </Button>
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="2" color="gray">

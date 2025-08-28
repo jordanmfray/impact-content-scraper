@@ -23,6 +23,7 @@ interface Article {
   sentiment: string | null
   keywords: string[]
   createdAt: Date
+  featured: boolean
   ogImage?: string | null
 }
 

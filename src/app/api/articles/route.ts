@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [
         {
+          featured: 'desc'
+        },
+        {
           publishedAt: 'desc'
         },
         {
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
       sentiment: article.sentiment,
       keywords: article.keywords,
       createdAt: article.createdAt,
+      featured: article.featured,
       organization: {
         id: article.organization.id,
         name: article.organization.name,
