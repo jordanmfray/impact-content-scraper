@@ -20,13 +20,28 @@ export default function RootLayout({
           .nav-item:hover {
             background-color: var(--gray-4) !important;
           }
+          .grid-cards-container {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          }
+          @media (min-width: 1200px) {
+            .grid-cards-container {
+              grid-template-columns: repeat(4, 1fr);
+            }
+          }
+          @media (max-width: 768px) {
+            .grid-cards-container {
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+          }
         `}</style>
       </head>
       <body>
         <Theme>
           <Flex>
             <Sidebar />
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div style={{ flex: 1, overflow: 'auto', minHeight: '100vh' }}>
               {children}
             </div>
           </Flex>

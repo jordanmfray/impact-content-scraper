@@ -1,8 +1,13 @@
-import { Container, Heading, Text, Flex, Card, Link, Button, Badge, Code } from "@radix-ui/themes";
+import { Box, Heading, Text, Flex, Card, Link, Button, Badge, Code } from "@radix-ui/themes";
 
 export default async function Home() {
   return (
-    <Container size="3" style={{ padding: 24 }}>
+    <Box style={{ 
+      marginLeft: '338px',
+      marginRight: '34px',
+      paddingTop: '24px',
+      paddingBottom: '24px'
+    }}>
       <Flex direction="column" gap="6">
         {/* Header */}
         <Flex direction="column" gap="2">
@@ -28,18 +33,7 @@ export default async function Home() {
               </Flex>
             </Card>
             
-            <Card>
-              <Flex align="center" justify="between">
-                <Flex direction="column" gap="1">
-                  <Text weight="bold">Functions</Text>
-                  <Text size="2" color="gray">Inngest Development Server</Text>
-                </Flex>
-                <Link href="http://localhost:8288" target="_blank">
-                  <Button variant="soft">Open</Button>
-                </Link>
-              </Flex>
-            </Card>
-            
+
             <Card>
               <Flex direction="column" gap="2">
                 <Text weight="bold">API Endpoint</Text>
@@ -66,6 +60,6 @@ export default async function Home() {
           </Flex>
         </Card>
       </Flex>
-    </Container>
+    </Box>
   )
 }

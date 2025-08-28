@@ -20,6 +20,7 @@ model Organization {
   
   // Relations
   articles      Article[]
+  aiRuns        AiRun[]
 }
 
 model Article {
@@ -47,6 +48,7 @@ model Article {
   organization   Organization @relation(fields: [organizationId], references: [id])
   rawDocument    RawDocument?
   enrichment     Enrichment?
+  aiRuns         AiRun[]
   
   @@index([organizationId])
   @@index([publishedAt])
@@ -81,4 +83,34 @@ model Enrichment {
   
   // Relations
   article       Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+model AiRun {
+  id            String   @id @default(cuid())
+  
+  // Run metadata
+  status        String   // running | completed | failed
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  duration      Int?     // milliseconds
+  
+  // Input data
+  inputUrl      String
+  organizationId String
+  
+  // Pipeline state and steps
+  stepsData     Json     // Stores the complete pipeline state and step details
+  
+  // Output data
+  articleId     String?
+  success       Boolean  @default(false)
+  errorMessage  String?
+  
+  // Relations
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  article       Article?     @relation(fields: [articleId], references: [id])
+  
+  @@index([status])
+  @@index([startedAt])
+  @@index([organizationId])
 }

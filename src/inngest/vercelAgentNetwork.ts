@@ -1,7 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
-import { firecrawlExtract } from '@/lib/firecrawl';
+import { firecrawlExtract, firecrawlExtractStructured } from '@/lib/firecrawl';
 import { prisma } from '@/lib/db';
 
 // Simple state interface for the entire pipeline
@@ -33,6 +33,7 @@ interface ArticlePipelineState {
 export async function runArticleScrapingPipeline(url: string, organizationId: string) {
   console.log('🚀 Starting Vercel AI SDK Pipeline');
   
+  const startTime = Date.now();
   const state: ArticlePipelineState = {
     url,
     organizationId,
@@ -46,25 +47,69 @@ export async function runArticleScrapingPipeline(url: string, organizationId: st
     saveComplete: false,
   };
 
-  // STEP 1: Web Scraping (Direct Function Call)
-  console.log('\n📥 Step 1: Web Scraping');
+  // Create AI run record
+  let aiRunId: string | null = null;
+  try {
+    const aiRun = await prisma.aiRun.create({
+      data: {
+        inputUrl: url,
+        organizationId,
+        status: 'running',
+        stepsData: { ...state, step: 'started' },
+      }
+    });
+    aiRunId = aiRun.id;
+    console.log(`🚀 Created AI run: ${aiRunId}`);
+  } catch (error) {
+    console.error('Failed to create AI run record:', error);
+  }
+
+  // STEP 1: Web Scraping with Structured Extraction
+  console.log('\n📥 Step 1: Web Scraping (Structured)');
   
   try {
-    const extractedResults = await firecrawlExtract([url]);
-    console.log('📡 Firecrawl response:', JSON.stringify(extractedResults, null, 2));
+    console.log(`🔥 ATTEMPTING Firecrawl structured extraction for: ${url}`);
+    const extractedResults = await firecrawlExtractStructured(url);
+    console.log(`✅ FIRECRAWL SUCCESS: Got data:`, extractedResults?.data);
     
-    // Handle array response from Firecrawl
-    const extracted = extractedResults?.data?.[0] || extractedResults?.[0];
-    
-    if (!extracted || (!extracted.markdown && !extracted.text && !extracted.content)) {
-      throw new Error(`Failed to extract content from ${url}`);
+    if (!extractedResults?.data || !extractedResults.data.title) {
+      console.log(`❌ FIRECRAWL MISSING DATA: extractedResults=${JSON.stringify(extractedResults, null, 2)}`);
+      throw new Error(`Failed to extract structured data from ${url}`);
     }
 
-    state.scrapedContent = extracted.markdown || extracted.text || extracted.content || '';
+    // Store the structured data directly
+    const data = extractedResults.data;
+    state.scrapedContent = data.body_markdown || data.content || data.summary || ''; // Prioritize body markdown content
+    state.title = data.title;
+    state.summary = data.summary || '';
+    state.keywords = data.keywords || [];
+    state.sentiment = data.sentiment || 'neutral';
+    state.author = data.author;
+    state.publishedAt = data.publish_date || data.publishedAt;
+    state.ogImage = data.main_image_url || data.ogImage;
+    
     state.discoveryComplete = true;
-    console.log(`✅ Scraping complete: ${state.scrapedContent.length} characters`);
+    state.enrichmentComplete = true; // Skip AI enrichment since we have structured data
+    
+    console.log(`✅ Firecrawl structured extraction complete: "${state.title}"`);
+    console.log(`   📊 Keywords: ${state.keywords.length}, Sentiment: ${state.sentiment}`);
+    console.log(`   📝 Content: ${state.scrapedContent.length} chars (${data.body_markdown ? 'body markdown' : 'text'})`);
+
+    // Update AI run with structured extraction results
+    if (aiRunId) {
+      try {
+        await prisma.aiRun.update({
+          where: { id: aiRunId },
+          data: { stepsData: { ...state, step: 'structured_extraction_complete' } }
+        });
+      } catch (error) {
+        console.error('Failed to update AI run:', error);
+      }
+    }
   } catch (error) {
-    console.error('⚠️ Firecrawl failed, trying simple fetch fallback:', error.message);
+    console.error('⚠️ Firecrawl structured extraction failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Full error details:', error);
+    console.log('🔄 Falling back to traditional scraping methods...');
     
     // Simple fetch fallback when Firecrawl fails
     try {
@@ -134,35 +179,51 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
     console.log(`✅ Content ready for analysis: ${state.scrapedContent.length} characters`);
   }
 
-  // STEP 2: Content Enrichment Agent
-  console.log('\n✨ Step 2: Content Enrichment Agent');
-  
-  const enrichmentResult = await generateObject({
-    model: openai('gpt-4o-mini'),
-    system: `You are a content analysis specialist. Analyze the provided content and extract structured metadata.`,
-    prompt: `Analyze this content and extract metadata:\n\n${state.scrapedContent.substring(0, 4000)}`,
-    schema: z.object({
-      title: z.string(),
-      summary: z.string(),
-      keywords: z.array(z.string()),
-      sentiment: z.enum(['positive', 'neutral', 'negative']),
-      author: z.string().optional(),
-      publishedAt: z.string().optional(),
-      ogImage: z.string().optional(),
-    }),
-  });
+  // STEP 2: Content Enrichment (Optional - only if structured extraction failed)
+  if (!state.enrichmentComplete) {
+    console.log('\n✨ Step 2: Content Enrichment Agent (Fallback)');
+    
+    const enrichmentResult = await generateObject({
+      model: openai('gpt-4o-mini'),
+      system: `You are a content analysis specialist. Analyze the provided content and extract structured metadata.`,
+      prompt: `Analyze this content and extract metadata:\n\n${state.scrapedContent.substring(0, 4000)}`,
+      schema: z.object({
+        title: z.string(),
+        summary: z.string(),
+        keywords: z.array(z.string()),
+        sentiment: z.enum(['positive', 'neutral', 'negative']),
+        author: z.string().optional(),
+        publishedAt: z.string().optional(),
+        ogImage: z.string().optional(),
+      }),
+    });
 
-  // Store enrichment results
-  state.title = enrichmentResult.object.title;
-  state.summary = enrichmentResult.object.summary;
-  state.keywords = enrichmentResult.object.keywords;
-  state.sentiment = enrichmentResult.object.sentiment;
-  state.author = enrichmentResult.object.author;
-  state.publishedAt = enrichmentResult.object.publishedAt;
-  state.ogImage = enrichmentResult.object.ogImage;
-  state.enrichmentComplete = true;
-  
-  console.log(`✅ Enrichment complete: "${state.title}" with ${state.keywords.length} keywords`);
+    // Store enrichment results
+    state.title = enrichmentResult.object.title;
+    state.summary = enrichmentResult.object.summary;
+    state.keywords = enrichmentResult.object.keywords;
+    state.sentiment = enrichmentResult.object.sentiment;
+    state.author = enrichmentResult.object.author;
+    state.publishedAt = enrichmentResult.object.publishedAt;
+    state.ogImage = enrichmentResult.object.ogImage;
+    state.enrichmentComplete = true;
+    
+    console.log(`✅ Fallback enrichment complete: "${state.title}" with ${state.keywords.length} keywords`);
+
+    // Update AI run with enrichment results
+    if (aiRunId) {
+      try {
+        await prisma.aiRun.update({
+          where: { id: aiRunId },
+          data: { stepsData: { ...state, step: 'enrichment_complete' } }
+        });
+      } catch (error) {
+        console.error('Failed to update AI run:', error);
+      }
+    }
+  } else {
+    console.log('\n✅ Step 2: Skipping enrichment (already extracted structured data)');
+  }
 
   // STEP 3: Database Save (only at the end)
   console.log('\n📰 Step 3: Database Save');
@@ -191,6 +252,24 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
       state.articleId = existingArticle.id;
       state.saveComplete = true;
       
+      // Update AI run for duplicate
+      if (aiRunId) {
+        try {
+          await prisma.aiRun.update({
+            where: { id: aiRunId },
+            data: { 
+              status: 'completed',
+              success: true,
+              articleId: existingArticle.id,
+              completedAt: new Date(),
+              stepsData: { ...state, step: 'completed_duplicate' }
+            }
+          });
+        } catch (error) {
+          console.error('Failed to update AI run:', error);
+        }
+      }
+
       return {
         success: true,
         state,
@@ -200,6 +279,7 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
         keywords: existingArticle.keywords,
         sentiment: existingArticle.sentiment || 'neutral',
         duplicate: true,
+        aiRunId,
       };
     }
 
@@ -251,6 +331,24 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
     console.log(`✅ Database save complete: Article ${article.id} created`);
     console.log(`   📄 RawDocument and 📊 Enrichment records linked directly to article`);
 
+    // Update AI run with success
+    if (aiRunId) {
+      try {
+        await prisma.aiRun.update({
+          where: { id: aiRunId },
+          data: { 
+            status: 'completed',
+            success: true,
+            articleId: article.id,
+            completedAt: new Date(),
+            stepsData: { ...state, step: 'completed_success' }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to update AI run:', error);
+      }
+    }
+
     return {
       success: true,
       state,
@@ -259,6 +357,7 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
       summary: state.summary,
       keywords: state.keywords,
       sentiment: state.sentiment,
+      aiRunId,
     };
   } catch (error) {
     console.error('❌ Database save failed:', error);

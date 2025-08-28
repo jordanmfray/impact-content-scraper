@@ -1,4 +1,4 @@
-import { Container, Heading, Text, Flex, Card, Grid, Box, Badge, Link } from "@radix-ui/themes";
+import { Box, Heading, Text, Flex, Card, Grid, Badge, Link } from "@radix-ui/themes";
 import { ArrowSquareOut } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
 import { Image } from "@phosphor-icons/react/dist/ssr/Image";
 import { prisma } from "@/lib/db";
@@ -25,14 +25,16 @@ export default async function OrganizationsPage() {
   const organizations = await getOrganizations();
   
   return (
-    <Container size="4" style={{ padding: 24 }}>
+    <Box style={{ 
+      marginLeft: '300px',
+      marginRight: '34px',
+      paddingTop: '24px',
+      paddingBottom: '24px'
+    }}>
       <Flex direction="column" gap="6">
         {/* Header */}
         <Flex direction="column" gap="2">
-          <Heading size="8" weight="bold">Organizations</Heading>
-          <Text size="4" color="gray">
-            Discover the organizations we monitor for content and insights
-          </Text>
+          <Heading size="6" weight="light">Organizations</Heading>
         </Flex>
 
         {/* Stats */}
@@ -43,7 +45,7 @@ export default async function OrganizationsPage() {
         </Flex>
 
         {/* Organizations Grid */}
-        <Grid columns={{ initial: "1", sm: "2", lg: "3" }} gap="4">
+        <Grid columns={{ initial: "1", sm: "2", lg: "3", xl: "5" }} gap="4">
           {organizations.map((org) => (
             <Card key={org.id} style={{ height: 'fit-content' }}>
               <Flex direction="column" gap="4">
@@ -135,6 +137,6 @@ export default async function OrganizationsPage() {
           </Card>
         )}
       </Flex>
-    </Container>
+    </Box>
   );
 }

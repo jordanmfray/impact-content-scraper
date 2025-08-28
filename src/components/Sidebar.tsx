@@ -121,8 +121,8 @@ export function Sidebar() {
             </Box>
           </Link>
 
-          {/* Agent Kit Dashboard */}
-          <Link href="http://localhost:8288" target="_blank">
+          {/* AI Kit Runs */}
+          <Link href="/ai-runs">
             <Box
               style={{
                 padding: 12,
@@ -143,7 +143,7 @@ export function Sidebar() {
                   fontWeight: 400,
                   lineHeight: '24px',
                 }}>
-                  Agent Kit Dashboard
+                  AI Kit Runs
                 </Text>
               </Flex>
             </Box>
