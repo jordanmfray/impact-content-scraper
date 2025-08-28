@@ -38,7 +38,7 @@ export default function Home() {
     async function fetchArticles() {
       try {
         setLoading(true)
-        const response = await fetch('/api/articles?limit=10')
+        const response = await fetch('/api/articles?limit=50')
         const data = await response.json()
 
         if (data.success) {
