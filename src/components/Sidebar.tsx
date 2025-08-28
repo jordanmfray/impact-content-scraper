@@ -1,9 +1,10 @@
 import { Flex, Text, Link, Box } from "@radix-ui/themes";
 import { FileText } from "@phosphor-icons/react/dist/ssr/FileText";
-import { Globe } from "@phosphor-icons/react/dist/ssr/Globe";
+import { Building } from "@phosphor-icons/react/dist/ssr/Building";
 import { Database } from "@phosphor-icons/react/dist/ssr/Database";
-import { Gear } from "@phosphor-icons/react/dist/ssr/Gear";
-import { UploadSimple } from "@phosphor-icons/react/dist/ssr/UploadSimple";
+import { Toolbox } from "@phosphor-icons/react/dist/ssr/Toolbox";
+import { MagicWand } from "@phosphor-icons/react/dist/ssr/MagicWand";
+import { Rows } from "@phosphor-icons/react/dist/ssr/Rows";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr/ShieldCheck";
 import Image from "next/image";
 
@@ -18,7 +19,7 @@ export function Sidebar() {
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 8,
-        boxShadow: '0px 25px 50px -12px #0000003D, 0px -1px 16.6px 0px #0000001A',
+        boxShadow: '0px 4px 12px -2px #00000015, 0px 2px 4px 0px #0000000A',
         position: 'fixed',
         top: 0,
         left: 0,
@@ -80,7 +81,7 @@ export function Sidebar() {
             >
               <Flex align="center" gap="3">
                 <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Globe size={20} color="#171717" />
+                  <Building size={20} color="#171717" />
                 </Box>
                 <Text size="3" weight="medium" color="gray" style={{
                   color: '#171717',
@@ -108,7 +109,7 @@ export function Sidebar() {
             >
               <Flex align="center" gap="3">
                 <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <UploadSimple size={20} color="#171717" />
+                  <MagicWand size={20} color="#171717" />
                 </Box>
                 <Text size="3" weight="medium" color="gray" style={{
                   color: '#171717',
@@ -117,7 +118,7 @@ export function Sidebar() {
                   fontWeight: 400,
                   lineHeight: '24px',
                 }}>
-                  Bulk Scraping
+                  Scrape Websites
                 </Text>
               </Flex>
             </Box>
@@ -136,7 +137,7 @@ export function Sidebar() {
             >
               <Flex align="center" gap="3">
                 <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Gear size={20} color="#171717" />
+                  <Toolbox size={20} color="#171717" />
                 </Box>
                 <Text size="3" weight="medium" color="gray" style={{
                   color: '#171717',
@@ -192,7 +193,7 @@ export function Sidebar() {
             >
               <Flex align="center" gap="3">
                 <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Gear size={20} color="#171717" />
+                  <Rows size={20} color="#171717" />
                 </Box>
                 <Text size="3" weight="medium" color="gray" style={{
                   color: '#171717',
