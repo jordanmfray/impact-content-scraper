@@ -123,8 +123,8 @@ export function Sidebar() {
             </Box>
           </Link>
 
-          {/* Admin Panel */}
-          <Link href="/admin/drafts">
+          {/* Article Management */}
+          <Link href="/admin/articles">
             <Box
               style={{
                 padding: 12,
@@ -136,7 +136,7 @@ export function Sidebar() {
             >
               <Flex align="center" gap="3">
                 <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ShieldCheck size={20} color="#171717" />
+                  <Gear size={20} color="#171717" />
                 </Box>
                 <Text size="3" weight="medium" color="gray" style={{
                   color: '#171717',
@@ -145,7 +145,7 @@ export function Sidebar() {
                   fontWeight: 400,
                   lineHeight: '24px',
                 }}>
-                  Admin Panel
+                  Article Management
                 </Text>
               </Flex>
             </Box>
