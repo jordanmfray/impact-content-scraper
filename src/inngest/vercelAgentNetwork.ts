@@ -367,7 +367,7 @@ Rate the inspiration level:`,
         images: state.images || [],
         sentiment: state.sentiment,
         keywords: state.keywords,
-        inspirationRating: state.inspirationRating as any, // Temporary type override for new field
+        inspirationRating: state.inspirationRating || 'low',
         status: 'draft', // Articles start as drafts for review
       },
     });
