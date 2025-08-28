@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Box, Flex, Text, Heading } from "@radix-ui/themes"
 import { ArticlePreviewDrawer } from './ArticlePreviewDrawer'
 import { OrganizationInfo } from './ArticleCards'
@@ -37,12 +37,18 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
   const [imageKey, setImageKey] = useState(0)
 
   // Filter for articles with images first, then fallback to all articles if needed
-  const articlesWithImages = articles.filter(article => article.ogImage && article.ogImage.trim() !== '')
-  const spotlightArticles = articlesWithImages.length >= 4 
-    ? articlesWithImages.slice(0, 4) 
-    : articlesWithImages.length > 0 
-      ? articlesWithImages.slice(0, Math.max(articlesWithImages.length, 1))
-      : articles.slice(0, 4) // Fallback to any articles if none have images
+  const spotlightArticles = useMemo(() => {
+    const articlesWithImages = articles.filter(article => article.ogImage && article.ogImage.trim() !== '')
+    
+    if (articlesWithImages.length >= 4) {
+      return articlesWithImages.slice(0, 4)
+    } else if (articlesWithImages.length > 0) {
+      return articlesWithImages.slice(0, Math.max(articlesWithImages.length, 1))
+    } else {
+      return articles.slice(0, 4) // Fallback to any articles if none have images
+    }
+  }, [articles])
+
   const activeArticle = spotlightArticles[activeIndex]
 
   // Notify parent component of featured articles

@@ -1,7 +1,7 @@
 'use client'
 
 import { Heading, Text, Flex, Box, Spinner, Skeleton } from "@radix-ui/themes"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { HeroCard, RowCard, GridCard } from "@/components/ArticleCards"
 import { SpotlightCarousel } from "@/components/SpotlightCarousel"
 
@@ -28,6 +28,11 @@ export default function Home() {
   const [featuredArticles, setFeaturedArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Memoize the callback to prevent infinite re-renders
+  const handleFeaturedArticlesChange = useCallback((newFeaturedArticles: Article[]) => {
+    setFeaturedArticles(newFeaturedArticles)
+  }, [])
 
   useEffect(() => {
     async function fetchArticles() {
@@ -259,7 +264,7 @@ export default function Home() {
         {/* Spotlight Carousel */}
         <SpotlightCarousel 
           articles={articles} 
-          onFeaturedArticlesChange={setFeaturedArticles}
+          onFeaturedArticlesChange={handleFeaturedArticlesChange}
         />
 
         {/* Grid Cards Section */}
