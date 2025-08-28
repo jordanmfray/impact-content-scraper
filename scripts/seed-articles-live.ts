@@ -84,7 +84,7 @@ async function seedArticlesLive() {
           console.log(`😊 Sentiment: ${result.sentiment}`)
           successCount++
         } else {
-          console.log(`❌ Scraping failed: ${result.error || 'Unknown error'}`)
+          console.log(`❌ Scraping failed: Unknown error`)
           failCount++
         }
         

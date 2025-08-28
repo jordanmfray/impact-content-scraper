@@ -1,4 +1,6 @@
-interface Params { params: { slug: string } }
+interface PageProps { 
+  params: Promise<{ slug: string }> 
+}
 
 async function fetchArticle(slug: string) {
   const base = process.env.PAYLOAD_SERVER_URL!
@@ -8,8 +10,9 @@ async function fetchArticle(slug: string) {
   return data?.docs?.[0] ?? null
 }
 
-export default async function ArticlePage({ params }: Params) {
-  const article = await fetchArticle(params.slug)
+export default async function ArticlePage({ params }: PageProps) {
+  const { slug } = await params
+  const article = await fetchArticle(slug)
   if (!article) return <main style={{ padding: 24 }}>Not found.</main>
   return (
     <main style={{ padding: 24 }}>

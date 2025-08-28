@@ -168,16 +168,13 @@ export default function AiRunsPage() {
       <Flex direction="column" gap="6">
         {/* Header */}
         <Flex direction="column" gap="2">
-          <Heading size="6" weight="light">AI Kit Runs</Heading>
-          <Text size="3" color="gray">
-            Monitor and analyze AI pipeline executions for prompt engineering and auditing
-          </Text>
+          <Heading size="6" weight="light">Scrape Log</Heading>
         </Flex>
 
         {/* Article Scraping Wizard */}
         <Card>
           <Flex direction="column" gap="4">
-            <Heading size="5">Create New Article</Heading>
+            <Heading size="5">Scrape New Webpage</Heading>
             <Text size="3" color="gray">
               Select an organization and paste a URL to scrape and create a new article
             </Text>

@@ -24,6 +24,11 @@ const ArticleSchema = {
       type: "string", 
       description: "The main article image URL"
     },
+    images: {
+      type: "array",
+      items: { type: "string" },
+      description: "Array of all image URLs found on the page that could be used as article images"
+    },
     keywords: {
       type: "array",
       items: { type: "string" },

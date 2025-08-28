@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
             results.push({
               url: cleanUrl,
               status: 'error',
-              message: `Scraping failed: ${pipelineResult.error || 'Unknown error'}`
+              message: `Scraping failed: Unknown error`
             })
           }
         } catch (pipelineError) {

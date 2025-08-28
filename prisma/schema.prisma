@@ -32,13 +32,14 @@ model Article {
   content        String?   // Full markdown content
   author         String?
   publishedAt    DateTime?
-  ogImage        String?   // og:image URL
+  ogImage        String?   // og:image URL (selected main image)
+  images         String[]  // Array of all discovered images from the page
   sentiment      String?   // pos | neu | neg
   keywords       String[]
   canonicalUrl   String?
   
   // Processing status
-  status         String    @default("processing") // processing | published | failed
+  status         String    @default("draft") // draft | processing | published | failed
   
   // Metadata
   createdAt      DateTime  @default(now())

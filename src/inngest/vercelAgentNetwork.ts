@@ -23,6 +23,7 @@ interface ArticlePipelineState {
   author?: string;
   publishedAt?: string;
   ogImage?: string;
+  images?: string[];
   
   // Step 3: Database Save
   saveComplete: boolean;
@@ -44,6 +45,7 @@ export async function runArticleScrapingPipeline(url: string, organizationId: st
     summary: '',
     keywords: [],
     sentiment: 'neutral',
+    images: [],
     saveComplete: false,
   };
 
@@ -87,6 +89,7 @@ export async function runArticleScrapingPipeline(url: string, organizationId: st
     state.author = data.author;
     state.publishedAt = data.publish_date || data.publishedAt;
     state.ogImage = data.main_image_url || data.ogImage;
+    state.images = data.images || [];
     
     state.discoveryComplete = true;
     state.enrichmentComplete = true; // Skip AI enrichment since we have structured data
@@ -283,7 +286,7 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
       };
     }
 
-    // Create new article (simplified architecture - no DiscoveryResult needed)
+    // Create new article as draft for review (simplified architecture - no DiscoveryResult needed)
     const article = await prisma.article.create({
       data: {
         organizationId: state.organizationId,
@@ -294,9 +297,10 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
         author: state.author,
         publishedAt: parsedPublishedAt,
         ogImage: state.ogImage,
+        images: state.images || [],
         sentiment: state.sentiment,
         keywords: state.keywords,
-        status: 'published',
+        status: 'draft', // Articles start as drafts for review
       },
     });
 
@@ -321,7 +325,6 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
         sentiment: state.sentiment,
         author: state.author,
         publishedAt: parsedPublishedAt,
-        entitiesJson: state.ogImage ? { ogImage: state.ogImage } : null,
       },
     });
 

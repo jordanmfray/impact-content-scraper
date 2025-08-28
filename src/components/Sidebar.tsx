@@ -4,6 +4,7 @@ import { Globe } from "@phosphor-icons/react/dist/ssr/Globe";
 import { Database } from "@phosphor-icons/react/dist/ssr/Database";
 import { Gear } from "@phosphor-icons/react/dist/ssr/Gear";
 import { UploadSimple } from "@phosphor-icons/react/dist/ssr/UploadSimple";
+import { ShieldCheck } from "@phosphor-icons/react/dist/ssr/ShieldCheck";
 import Image from "next/image";
 
 export function Sidebar() {
@@ -122,6 +123,34 @@ export function Sidebar() {
             </Box>
           </Link>
 
+          {/* Admin Panel */}
+          <Link href="/admin/drafts">
+            <Box
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+              }}
+              className="nav-item"
+            >
+              <Flex align="center" gap="3">
+                <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShieldCheck size={20} color="#171717" />
+                </Box>
+                <Text size="3" weight="medium" color="gray" style={{
+                  color: '#171717',
+                  fontFamily: 'F37Jan',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                }}>
+                  Admin Panel
+                </Text>
+              </Flex>
+            </Box>
+          </Link>
+
           {/* Supabase Studio */}
           <Link href="http://localhost:54323" target="_blank">
             <Box
@@ -172,7 +201,7 @@ export function Sidebar() {
                   fontWeight: 400,
                   lineHeight: '24px',
                 }}>
-                  AI Kit Runs
+                  Scrape Log
                 </Text>
               </Flex>
             </Box>
