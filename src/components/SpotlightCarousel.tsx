@@ -35,6 +35,8 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [imageKey, setImageKey] = useState(0)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [isHovering, setIsHovering] = useState(false)
 
   // Filter for articles with images first, then fallback to all articles if needed
   const spotlightArticles = useMemo(() => {
@@ -49,7 +51,9 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
     }
   }, [articles])
 
-  const activeArticle = spotlightArticles[activeIndex]
+  // Use hovered article when hovering, otherwise use active article
+  const displayIndex = isHovering && hoveredIndex !== null ? hoveredIndex : activeIndex
+  const activeArticle = spotlightArticles[displayIndex]
 
   // Notify parent component of featured articles
   useEffect(() => {
@@ -66,11 +70,11 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
   }, [spotlightArticles.length])
 
   useEffect(() => {
-    if (isPaused || spotlightArticles.length <= 1) return
+    if (isPaused || isHovering || spotlightArticles.length <= 1) return
 
     const interval = setInterval(nextSlide, 4000) // Change every 4 seconds
     return () => clearInterval(interval)
-  }, [nextSlide, isPaused, spotlightArticles.length])
+  }, [nextSlide, isPaused, isHovering, spotlightArticles.length])
 
   // Handle manual selection
   const handleCardClick = (index: number, article: Article) => {
@@ -92,6 +96,19 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
       setIsPaused(true)
       setTimeout(() => setIsPaused(false), 10000)
     }
+  }
+
+  // Handle hover on article list items
+  const handleMouseEnter = (index: number) => {
+    setHoveredIndex(index)
+    setIsHovering(true)
+    setImageKey(prev => prev + 1) // Trigger image transition
+  }
+
+  const handleMouseLeave = () => {
+    setHoveredIndex(null)
+    setIsHovering(false)
+    setImageKey(prev => prev + 1) // Trigger image transition back
   }
 
   if (spotlightArticles.length === 0) {
@@ -146,20 +163,27 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
         {/* Right Side - Clean Article List */}
         <Box style={{ flex: '1' }}>
           <Box>
-            {spotlightArticles.map((article, index) => (
-              <Box
-                key={article.id}
-                onClick={() => handleCardClick(index, article)}
-                style={{
-                  cursor: 'pointer',
-                  padding: '16px 20px',
-                  borderBottom: index < spotlightArticles.length - 1 ? '1px solid var(--gray-4)' : 'none',
-                  borderLeft: index === activeIndex ? '2px solid #393939' : '2px solid var(--gray-6)',
-                  backgroundColor: index === activeIndex ? 'var(--accent-1)' : 'transparent',
-                  transition: 'all 0.3s ease',
-                  marginLeft: '-1px' // Offset for border alignment
-                }}
-              >
+            {spotlightArticles.map((article, index) => {
+              const isActive = index === activeIndex
+              const isHovered = hoveredIndex === index
+              const isDisplayed = isActive || isHovered
+              
+              return (
+                <Box
+                  key={article.id}
+                  onClick={() => handleCardClick(index, article)}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={handleMouseLeave}
+                  style={{
+                    cursor: 'pointer',
+                    padding: '16px 20px',
+                    borderBottom: index < spotlightArticles.length - 1 ? '1px solid var(--gray-4)' : 'none',
+                    borderLeft: isDisplayed ? '2px solid #393939' : '2px solid var(--gray-6)',
+                    backgroundColor: isDisplayed ? 'var(--accent-1)' : (isHovered ? 'var(--gray-1)' : 'transparent'),
+                    transition: 'all 0.3s ease',
+                    marginLeft: '-1px' // Offset for border alignment
+                  }}
+                >
                 {/* Organization */}
                 <Box mb="1">
                   <OrganizationInfo 
@@ -177,7 +201,7 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
                     lineHeight: '1.4',
                     fontWeight: '400',
                     height: '2.8em', // Fixed height for exactly 2 lines (1.4 * 2)
-                    color: index === activeIndex ? '#404040' : '#8F8F8F',
+                    color: isDisplayed ? '#404040' : (isHovered ? '#606060' : '#8F8F8F'),
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
@@ -187,7 +211,8 @@ export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: Spotli
                   {article.title}
                 </Text>
               </Box>
-            ))}
+              )
+            })}
           </Box>
         </Box>
       </Flex>
