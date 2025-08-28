@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Box, Heading, Text, Flex, Button, Card, Badge, Spinner, Table, IconButton } from '@radix-ui/themes'
+import { Box, Heading, Text, Flex, Button, Card, Badge, Spinner, Table, IconButton, Dialog, TextField, TextArea } from '@radix-ui/themes'
 import { CheckCircle, XCircle, Eye, PencilSimple, Trash, CaretLeft, CaretRight } from "@phosphor-icons/react/dist/ssr"
 
 interface Article {
@@ -42,6 +42,15 @@ export default function AdminArticlesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  
+  // Edit modal state
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null)
+  const [editForm, setEditForm] = useState({
+    title: '',
+    summary: '',
+    content: '',
+    ogImage: ''
+  })
 
   useEffect(() => {
     fetchArticles()
@@ -152,6 +161,42 @@ export default function AdminArticlesPage() {
     }
   }
 
+  const handleEdit = (article: Article) => {
+    setEditingArticle(article)
+    setEditForm({
+      title: article.title,
+      summary: article.summary || '',
+      content: article.content || '',
+      ogImage: article.ogImage || ''
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingArticle) return
+    
+    setIsUpdating(true)
+    try {
+      const success = await updateArticle(editingArticle.id, {
+        title: editForm.title,
+        summary: editForm.summary || null,
+        content: editForm.content || null,
+        ogImage: editForm.ogImage || null
+      })
+      
+      if (success) {
+        setEditingArticle(null)
+        setEditForm({ title: '', summary: '', content: '', ogImage: '' })
+      }
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingArticle(null)
+    setEditForm({ title: '', summary: '', content: '', ogImage: '' })
+  }
+
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value)
     setPagination(prev => prev ? { ...prev, page: 1 } : null)
@@ -245,24 +290,8 @@ export default function AdminArticlesPage() {
     }}>
       <Flex direction="column" gap="6">
         {/* Header */}
-        <Box mb="6" pb="4" style={{ borderBottom: '1px solid var(--gray-6)' }}>
-          <Heading size="7" weight="bold" mb="1">📄 Article Management</Heading>
-          <Text size="3" color="gray">
-            Manage all articles with filtering and bulk actions
-          </Text>
-        </Box>
-
-        <Flex justify="between" align="center">
-          <Box>
-            <Heading size="6" weight="light">All Articles</Heading>
-            <Text size="3" color="gray">
-              {pagination?.totalCount || 0} total article{(pagination?.totalCount || 0) !== 1 ? 's' : ''}
-            </Text>
-          </Box>
-          <Button onClick={() => fetchArticles(pagination?.page || 1)} variant="soft">
-            Refresh
-          </Button>
-        </Flex>
+        
+        <Heading size="6" weight="light" mb="1">Article Management</Heading>
 
       {/* Filters */}
       <Card>
@@ -372,6 +401,7 @@ export default function AdminArticlesPage() {
                         size="1" 
                         variant="soft" 
                         color="blue"
+                        onClick={() => handleEdit(article)}
                         disabled={isUpdating}
                       >
                         <PencilSimple size={14} />
@@ -433,6 +463,129 @@ export default function AdminArticlesPage() {
           </Button>
         </Flex>
       )}
+
+      {/* Edit Article Dialog */}
+      <Dialog.Root open={!!editingArticle} onOpenChange={(open) => !open && handleCancelEdit()}>
+        <Dialog.Content style={{ maxWidth: 800, maxHeight: '90vh', overflow: 'auto' }}>
+          <Dialog.Title>Edit Article</Dialog.Title>
+          <Dialog.Description size="2" color="gray" mb="4">
+            Update the article title, summary, content, and main image.
+          </Dialog.Description>
+
+          <Flex direction="column" gap="4">
+            {/* Title Field */}
+            <Flex direction="column" gap="2">
+              <Text size="2" weight="medium">Title</Text>
+              <TextField.Root
+                value={editForm.title}
+                onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Article title..."
+                size="3"
+              />
+            </Flex>
+
+            {/* Summary Field */}
+            <Flex direction="column" gap="2">
+              <Text size="2" weight="medium">Summary</Text>
+              <TextArea
+                value={editForm.summary}
+                onChange={(e) => setEditForm(prev => ({ ...prev, summary: e.target.value }))}
+                placeholder="Article summary..."
+                rows={3}
+                resize="vertical"
+              />
+            </Flex>
+
+            {/* Content Field */}
+            <Flex direction="column" gap="2">
+              <Text size="2" weight="medium">Content (Markdown)</Text>
+              <TextArea
+                value={editForm.content}
+                onChange={(e) => setEditForm(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Article content in markdown format..."
+                rows={8}
+                resize="vertical"
+                style={{ fontFamily: 'monospace', fontSize: '13px' }}
+              />
+            </Flex>
+
+            {/* Image Selection */}
+            {editingArticle && editingArticle.images.length > 0 && (
+              <Flex direction="column" gap="2">
+                <Text size="2" weight="medium">
+                  Main Image ({editingArticle.images.length} available)
+                </Text>
+                <Flex gap="2" wrap="wrap" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {editingArticle.images.map((imageUrl, index) => (
+                    <Box
+                      key={index}
+                      onClick={() => setEditForm(prev => ({ ...prev, ogImage: imageUrl }))}
+                      style={{
+                        width: '120px',
+                        height: '80px',
+                        backgroundImage: `url(${imageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        border: editForm.ogImage === imageUrl ? '3px solid var(--blue-9)' : '2px solid var(--gray-6)',
+                        transition: 'border-color 0.2s',
+                        position: 'relative'
+                      }}
+                    >
+                      {editForm.ogImage === imageUrl && (
+                        <Box
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            background: 'var(--blue-9)',
+                            color: 'white',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px'
+                          }}
+                        >
+                          ✓
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
+                </Flex>
+                {editForm.ogImage && (
+                  <Button
+                    variant="soft"
+                    size="1"
+                    color="gray"
+                    onClick={() => setEditForm(prev => ({ ...prev, ogImage: '' }))}
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </Flex>
+            )}
+
+            {/* Action Buttons */}
+            <Flex gap="3" justify="end" mt="4">
+              <Dialog.Close>
+                <Button variant="soft" color="gray" disabled={isUpdating}>
+                  Cancel
+                </Button>
+              </Dialog.Close>
+              <Button 
+                onClick={handleSaveEdit}
+                disabled={isUpdating || !editForm.title.trim()}
+              >
+                {isUpdating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </Flex>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
       </Flex>
     </Box>
   )
