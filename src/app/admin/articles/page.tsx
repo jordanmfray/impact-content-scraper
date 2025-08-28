@@ -83,6 +83,24 @@ export default function AdminArticlesPage() {
     }
   }
 
+  const formatUrl = (url: string) => {
+    // Remove common URL prefixes
+    let cleanUrl = url
+      .replace(/^https?:\/\/www\./, '')
+      .replace(/^https?:\/\//, '')
+    
+    // If the cleaned URL is short enough, return it as is
+    if (cleanUrl.length <= 27) { // 12 + 3 (dots) + 12 = 27
+      return cleanUrl
+    }
+    
+    // Take first 12 chars of cleaned URL + ... + last 12 chars of original URL
+    const firstPart = cleanUrl.substring(0, 12)
+    const lastPart = url.substring(url.length - 12)
+    
+    return `${firstPart}...${lastPart}`
+  }
+
   const toggleFeatured = async (articleId: string, currentFeatured: boolean) => {
     try {
       setIsUpdating(true)
@@ -396,7 +414,7 @@ export default function AdminArticlesPage() {
                     </Text>
                   </Table.Cell>
                   <Table.Cell style={{ maxWidth: '300px' }}>
-                    <Text size="2" weight="medium" style={{ 
+                    <Text size="2" style={{ 
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
@@ -411,7 +429,7 @@ export default function AdminArticlesPage() {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
                     }} title={article.url}>
-                      {article.url.length > 40 ? `${article.url.substring(0, 40)}...` : article.url}
+                      {formatUrl(article.url)}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
