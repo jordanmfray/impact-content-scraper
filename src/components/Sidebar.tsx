@@ -19,7 +19,7 @@ export function Sidebar() {
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 8,
-        boxShadow: '0px 4px 12px -2px #00000015, 0px 2px 4px 0px #0000000A',
+        boxShadow: '0px 25px 50px -12px #0000003D, 0px -1px 16.6px 0px #0000001A',
         position: 'fixed',
         top: 0,
         left: 0,

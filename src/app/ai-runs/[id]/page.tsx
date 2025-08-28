@@ -136,7 +136,7 @@ export default function AiRunDetailPage({ params }: { params: Promise<{ id: stri
             </Button>
           </Link>
           <Flex direction="column" gap="1">
-            <Heading size="8" weight="bold">AI Run Details</Heading>
+            <Heading size="6" weight="light">AI Run Details</Heading>
             <Text size="3" color="gray">Run ID: {run.id}</Text>
           </Flex>
         </Flex>
