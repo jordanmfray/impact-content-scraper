@@ -369,7 +369,7 @@ export default function AdminArticlesPage() {
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeaderCell>State</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Featured</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Published Date</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Date Scraped</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Article Title</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>URL</Table.ColumnHeaderCell>
@@ -386,15 +386,9 @@ export default function AdminArticlesPage() {
                     {getStatusBadge(article.status)}
                   </Table.Cell>
                   <Table.Cell>
-                    <Button
-                      size="1"
-                      variant={article.featured ? "solid" : "soft"}
-                      color={article.featured ? "orange" : "gray"}
-                      onClick={() => toggleFeatured(article.id, article.featured)}
-                      disabled={isUpdating}
-                    >
-                      {article.featured ? "★" : "☆"}
-                    </Button>
+                    <Text size="2" color="gray">
+                      {article.publishedAt ? formatDate(article.publishedAt) : 'Not published'}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="2" color="gray">
@@ -435,6 +429,15 @@ export default function AdminArticlesPage() {
                   </Table.Cell>
                   <Table.Cell>
                     <Flex gap="2">
+                      <Button
+                        size="1"
+                        variant={article.featured ? "solid" : "soft"}
+                        color={article.featured ? "orange" : "gray"}
+                        onClick={() => toggleFeatured(article.id, article.featured)}
+                        disabled={isUpdating}
+                      >
+                        {article.featured ? "★" : "☆"}
+                      </Button>
                       <IconButton 
                         size="1" 
                         variant="soft" 
