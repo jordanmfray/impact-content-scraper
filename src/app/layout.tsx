@@ -4,8 +4,8 @@ import { Theme, Flex } from "@radix-ui/themes";
 import { Sidebar } from "@/components/Sidebar";
 
 export const metadata = {
-  title: 'Aggregation App',
-  description: 'Next.js + Supabase + Inngest pipeline for content aggregation',
+  title: 'Gloo Impact News',
+  description: 'Impact journalism and news from organizations making a difference',
 }
 
 export default function RootLayout({
