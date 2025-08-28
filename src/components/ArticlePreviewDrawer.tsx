@@ -94,10 +94,10 @@ export function ArticlePreviewDrawer({ article, open, onClose }: ArticlePreviewD
           width: 'min(600px, 100vw)',
           backgroundColor: 'var(--color-background)',
           borderLeft: '1px solid var(--gray-6)',
-          boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.15)',
+          boxShadow: open ? '-4px 0 24px rgba(0, 0, 0, 0.15)' : 'none',
           zIndex: 1001,
           transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden'
