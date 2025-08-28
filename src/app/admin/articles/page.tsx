@@ -20,6 +20,7 @@ interface Article {
   updatedAt: Date
   status: string
   featured: boolean
+  inspirationRating?: string | null
   organization: {
     id: string
     name: string
@@ -83,22 +84,14 @@ export default function AdminArticlesPage() {
     }
   }
 
-  const formatUrl = (url: string) => {
-    // Remove common URL prefixes
-    let cleanUrl = url
-      .replace(/^https?:\/\/www\./, '')
-      .replace(/^https?:\/\//, '')
-    
-    // If the cleaned URL is short enough, return it as is
-    if (cleanUrl.length <= 27) { // 12 + 3 (dots) + 12 = 27
-      return cleanUrl
+  const getRootDomain = (url: string) => {
+    try {
+      const urlObj = new URL(url)
+      return urlObj.hostname.replace(/^www\./, '')
+    } catch {
+      // Fallback for invalid URLs
+      return url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]
     }
-    
-    // Take first 12 chars of cleaned URL + ... + last 12 chars of original URL
-    const firstPart = cleanUrl.substring(0, 12)
-    const lastPart = url.substring(url.length - 12)
-    
-    return `${firstPart}...${lastPart}`
   }
 
   const toggleFeatured = async (articleId: string, currentFeatured: boolean) => {
@@ -261,6 +254,21 @@ export default function AdminArticlesPage() {
     }
   }
 
+  const getInspirationPill = (rating: string | null) => {
+    if (!rating) return <Badge variant="soft" color="gray">Unknown</Badge>
+    
+    switch (rating) {
+      case 'high':
+        return <Badge variant="solid" color="green">High ⭐</Badge>
+      case 'medium':
+        return <Badge variant="soft" color="orange">Medium</Badge>
+      case 'low':
+        return <Badge variant="soft" color="gray">Low</Badge>
+      default:
+        return <Badge variant="soft" color="gray">Unknown</Badge>
+    }
+  }
+
   const getSentimentPill = (sentiment: string | null) => {
     if (!sentiment) return <Badge color="gray">Unknown</Badge>
     
@@ -394,6 +402,7 @@ export default function AdminArticlesPage() {
                 <Table.ColumnHeaderCell>Organization</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Images</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Sentiment</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Inspiration</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Tools</Table.ColumnHeaderCell>
               </Table.Row>
             </Table.Header>
@@ -424,12 +433,14 @@ export default function AdminArticlesPage() {
                     </Text>
                   </Table.Cell>
                   <Table.Cell style={{ maxWidth: '200px' }}>
-                    <Text size="2" color="gray" style={{ 
+                    <Text size="2" color="blue" style={{ 
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }} title={article.url}>
-                      {formatUrl(article.url)}
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }} title={article.url} onClick={() => window.open(article.url, '_blank')}>
+                      {getRootDomain(article.url)}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
@@ -444,6 +455,9 @@ export default function AdminArticlesPage() {
                   </Table.Cell>
                   <Table.Cell>
                     {getSentimentPill(article.sentiment)}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {getInspirationPill(article.inspirationRating || null)}
                   </Table.Cell>
                   <Table.Cell>
                     <Flex gap="2">

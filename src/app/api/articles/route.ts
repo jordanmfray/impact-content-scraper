@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
       keywords: article.keywords,
       createdAt: article.createdAt,
       featured: article.featured,
+      inspirationRating: article.inspirationRating,
       organization: {
         id: article.organization.id,
         name: article.organization.name,

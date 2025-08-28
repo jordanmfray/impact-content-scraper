@@ -24,6 +24,7 @@ interface Article {
   keywords: string[]
   createdAt: Date
   featured: boolean
+  inspirationRating?: string | null
   ogImage?: string | null
 }
 

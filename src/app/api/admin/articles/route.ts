@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
       updatedAt: article.updatedAt,
       status: article.status,
       featured: article.featured,
+      inspirationRating: article.inspirationRating,
       organization: {
         id: article.organization.id,
         name: article.organization.name,

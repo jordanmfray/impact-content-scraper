@@ -37,6 +37,7 @@ model Article {
   sentiment      String?   // pos | neu | neg
   keywords       String[]
   canonicalUrl   String?
+  inspirationRating String? // low | medium | high - how inspiring/transformational the story is
   
   // Processing status
   status         String    @default("draft") // draft | processing | published | failed

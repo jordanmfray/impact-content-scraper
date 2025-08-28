@@ -17,6 +17,7 @@ interface Article {
   keywords: string[]
   createdAt: Date
   featured: boolean
+  inspirationRating?: string | null
   organization: {
     id: string
     name: string
