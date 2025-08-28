@@ -35,6 +35,13 @@ export default function RootLayout({
               grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             }
           }
+          .grid-card {
+            box-shadow: none !important;
+          }
+          .grid-card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+          }
         `}</style>
       </head>
       <body>

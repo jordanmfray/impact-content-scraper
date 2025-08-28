@@ -418,23 +418,17 @@ export function GridCard({ article, variant = 'blue' }: ArticleCardProps & { var
   return (
     <>
     <Box
+      className="grid-card"
       style={{
         backgroundColor: backgroundColors[variant],
         borderRadius: '4px',
         padding: '20px',
         cursor: 'pointer',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
         height: '100%',
         display: 'flex',
-        flexDirection: 'column'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = 'none'
+        flexDirection: 'column',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        boxShadow: 'none'
       }}
       onClick={handleCardClick}
     >
