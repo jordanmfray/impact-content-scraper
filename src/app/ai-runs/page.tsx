@@ -48,18 +48,14 @@ function formatDuration(ms: number) {
 export default function AiRunsPage() {
   const [runs, setRuns] = useState<AiRun[]>([])
   const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<string>('')
 
   useEffect(() => {
     fetchRuns()
-  }, [statusFilter])
+  }, [])
 
   const fetchRuns = async () => {
     try {
-      const params = new URLSearchParams()
-      if (statusFilter) params.append('status', statusFilter)
-      
-      const response = await fetch(`/api/ai-runs?${params}`)
+      const response = await fetch('/api/ai-runs')
       const data = await response.json()
       
       if (data.success) {
@@ -103,41 +99,6 @@ export default function AiRunsPage() {
             </Button>
           </Link>
         </Flex>
-
-        {/* Filters */}
-        <Card>
-          <Flex gap="3" align="center">
-            <Text weight="medium">Filter by status:</Text>
-            <Button 
-              variant={statusFilter === '' ? 'solid' : 'soft'} 
-              onClick={() => setStatusFilter('')}
-              size="2"
-            >
-              All
-            </Button>
-            <Button 
-              variant={statusFilter === 'running' ? 'solid' : 'soft'} 
-              onClick={() => setStatusFilter('running')}
-              size="2"
-            >
-              Running
-            </Button>
-            <Button 
-              variant={statusFilter === 'completed' ? 'solid' : 'soft'} 
-              onClick={() => setStatusFilter('completed')}
-              size="2"
-            >
-              Completed
-            </Button>
-            <Button 
-              variant={statusFilter === 'failed' ? 'solid' : 'soft'} 
-              onClick={() => setStatusFilter('failed')}
-              size="2"
-            >
-              Failed
-            </Button>
-          </Flex>
-        </Card>
 
         {/* Runs Table */}
         <Card>
