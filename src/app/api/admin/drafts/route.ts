@@ -19,9 +19,14 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: {
-        publishedAt: 'desc'
-      },
+      orderBy: [
+        {
+          publishedAt: 'desc'
+        },
+        {
+          createdAt: 'desc'
+        }
+      ],
       take: limit
     })
 
