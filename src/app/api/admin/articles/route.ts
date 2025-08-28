@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        publishedAt: 'desc'
       },
       skip,
       take: limit
