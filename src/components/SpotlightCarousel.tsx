@@ -26,17 +26,31 @@ interface Article {
 
 interface SpotlightCarouselProps {
   articles: Article[]
+  onFeaturedArticlesChange?: (featuredArticles: Article[]) => void
 }
 
-export function SpotlightCarousel({ articles }: SpotlightCarouselProps) {
+export function SpotlightCarousel({ articles, onFeaturedArticlesChange }: SpotlightCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [imageKey, setImageKey] = useState(0)
 
-  const spotlightArticles = articles.slice(0, 4) // Show up to 4 articles in carousel
+  // Filter for articles with images first, then fallback to all articles if needed
+  const articlesWithImages = articles.filter(article => article.ogImage && article.ogImage.trim() !== '')
+  const spotlightArticles = articlesWithImages.length >= 4 
+    ? articlesWithImages.slice(0, 4) 
+    : articlesWithImages.length > 0 
+      ? articlesWithImages.slice(0, Math.max(articlesWithImages.length, 1))
+      : articles.slice(0, 4) // Fallback to any articles if none have images
   const activeArticle = spotlightArticles[activeIndex]
+
+  // Notify parent component of featured articles
+  useEffect(() => {
+    if (onFeaturedArticlesChange) {
+      onFeaturedArticlesChange(spotlightArticles)
+    }
+  }, [spotlightArticles, onFeaturedArticlesChange])
 
   // Auto-play functionality
   const nextSlide = useCallback(() => {
@@ -76,8 +90,8 @@ export function SpotlightCarousel({ articles }: SpotlightCarouselProps) {
 
   if (spotlightArticles.length === 0) {
     return (
-      <Box style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Text color="gray">No articles available for spotlight</Text>
+      <Box style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--gray-2)', borderRadius: 'var(--radius-3)' }}>
+        <Text color="gray">No articles available for spotlight. Articles need images to be featured.</Text>
       </Box>
     )
   }
