@@ -41,7 +41,7 @@ export default function RootLayout({
         <Theme>
           <Flex>
             <Sidebar />
-            <div style={{ flex: 1, overflow: 'auto', minHeight: '100vh' }}>
+            <div style={{ flex: 1, overflow: 'auto', minHeight: '100vh', backgroundColor: '#ffffff', position: 'relative', zIndex: 1 }}>
               {children}
             </div>
           </Flex>
