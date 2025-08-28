@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Box, Heading, Text, Flex, Button, Select, TextArea, Card, Badge, Spinner } from '@radix-ui/themes'
 import { CheckCircle } from "@phosphor-icons/react/dist/ssr/CheckCircle"
 import { XCircle } from "@phosphor-icons/react/dist/ssr/XCircle"
@@ -15,7 +15,7 @@ interface Organization {
 
 interface ScrapeResult {
   url: string
-  status: 'pending' | 'processing' | 'success' | 'error'
+  status: 'pending' | 'processing' | 'success' | 'error' | 'duplicate'
   message?: string
   articleId?: string
 }
@@ -27,6 +27,7 @@ export default function BulkScrapePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [results, setResults] = useState<ScrapeResult[]>([])
   const [loadingOrgs, setLoadingOrgs] = useState(true)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   // Load organizations on component mount
   useEffect(() => {
@@ -48,6 +49,13 @@ export default function BulkScrapePage() {
     fetchOrganizations()
   }, [])
 
+  // Auto-scroll to latest results when processing
+  useEffect(() => {
+    if (isProcessing && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [results, isProcessing])
+
   const handleBulkScrape = async () => {
     if (!selectedOrgId || !urls.trim()) {
       alert('Please select an organization and enter at least one URL')
@@ -66,48 +74,78 @@ export default function BulkScrapePage() {
     }
 
     setIsProcessing(true)
+    
+    // Initialize all results as pending
     const initialResults: ScrapeResult[] = urlList.map(url => ({
       url,
       status: 'pending'
     }))
     setResults(initialResults)
 
-    try {
-      const response = await fetch('/api/bulk-scrape', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          organizationId: selectedOrgId,
-          urls: urlList
-        })
-      })
-
-      const data = await response.json()
+    // Process URLs one by one for real-time updates
+    for (let i = 0; i < urlList.length; i++) {
+      const url = urlList[i]
       
-      if (data.success) {
-        // Set final results from the API response
-        setResults(data.results || [])
+      // Update status to processing
+      setResults(prev => prev.map((result, index) => 
+        index === i ? { ...result, status: 'processing' as const } : result
+      ))
+
+      try {
+        // Make individual API call for this URL
+        const response = await fetch('/api/scrape-article', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: url,
+            organizationId: selectedOrgId
+          })
+        })
+
+        const data = await response.json()
         
-        // Show summary
-        const { summary } = data
-        const summaryMessage = `Bulk scraping completed!\n\n` +
-          `✅ ${summary.success} URLs started scraping\n` +
-          `📄 ${summary.duplicates} duplicates skipped\n` +
-          `❌ ${summary.errors} errors\n\n` +
-          `Articles will appear in the main feed as scraping completes (may take a few minutes).`
-        
-        alert(summaryMessage)
-      } else {
-        alert(`Error: ${data.error}`)
+        if (data.success) {
+          // Update with success result
+          setResults(prev => prev.map((result, index) => 
+            index === i ? {
+              ...result,
+              status: data.result.duplicate ? 'duplicate' as const : 'success' as const,
+              message: data.result.duplicate 
+                ? `Article already exists: "${data.result.title}"`
+                : `Successfully scraped: "${data.result.title}"`,
+              articleId: data.result.articleId
+            } : result
+          ))
+        } else {
+          // Update with error result
+          setResults(prev => prev.map((result, index) => 
+            index === i ? {
+              ...result,
+              status: 'error' as const,
+              message: `Error: ${data.error || data.details || 'Unknown error'}`
+            } : result
+          ))
+        }
+      } catch (error) {
+        console.error(`Error processing URL ${url}:`, error)
+        setResults(prev => prev.map((result, index) => 
+          index === i ? {
+            ...result,
+            status: 'error' as const,
+            message: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`
+          } : result
+        ))
       }
-    } catch (error) {
-      console.error('Bulk scrape error:', error)
-      alert('Failed to start bulk scraping')
-    } finally {
-      setIsProcessing(false)
+
+      // Add a small delay between requests to be respectful
+      if (i < urlList.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
     }
+
+    setIsProcessing(false)
   }
 
   const getStatusIcon = (status: ScrapeResult['status']) => {
@@ -118,6 +156,8 @@ export default function BulkScrapePage() {
         return <Spinner size="1" />
       case 'success':
         return <CheckCircle size={16} className="text-green-500" />
+      case 'duplicate':
+        return <Warning size={16} className="text-orange-500" />
       case 'error':
         return <XCircle size={16} className="text-red-500" />
       default:
@@ -133,6 +173,8 @@ export default function BulkScrapePage() {
         return 'blue'
       case 'success':
         return 'green'
+      case 'duplicate':
+        return 'orange'
       case 'error':
         return 'red'
       default:
@@ -212,14 +254,14 @@ https://example.com/article-3"
                 onClick={handleBulkScrape}
                 disabled={isProcessing || !selectedOrgId || !urls.trim()}
               >
-                {isProcessing ? (
-                  <>
-                    <Spinner size="1" />
-                    Processing...
-                  </>
-                ) : (
-                  'Start Bulk Scraping'
-                )}
+                              {isProcessing ? (
+                <>
+                  <Spinner size="1" />
+                  Processing ({results.filter(r => r.status === 'success' || r.status === 'error' || r.status === 'duplicate').length}/{results.length})
+                </>
+              ) : (
+                'Start Real-Time Scraping'
+              )}
               </Button>
               
               {(urls.trim() || results.length > 0) && (
@@ -243,9 +285,16 @@ https://example.com/article-3"
 
         {/* Results Section */}
         {results.length > 0 && (
-          <Card style={{ padding: '24px' }}>
+          <Card ref={resultsRef} style={{ padding: '24px' }}>
             <Flex direction="column" gap="4">
-              <Heading size="4">Scraping Results</Heading>
+              <Flex justify="between" align="center">
+                <Heading size="4">Real-Time Scraping Progress</Heading>
+                {isProcessing && (
+                  <Text size="2" color="blue">
+                    {Math.round((results.filter(r => r.status !== 'pending' && r.status !== 'processing').length / results.length) * 100)}% Complete
+                  </Text>
+                )}
+              </Flex>
               
               {/* Summary Stats */}
               <Flex gap="4" wrap="wrap">
@@ -255,15 +304,22 @@ https://example.com/article-3"
                 <Badge color="green">
                   Success: {results.filter(r => r.status === 'success').length}
                 </Badge>
+                <Badge color="orange">
+                  Duplicates: {results.filter(r => r.status === 'duplicate').length}
+                </Badge>
                 <Badge color="red">
                   Failed: {results.filter(r => r.status === 'error').length}
                 </Badge>
-                <Badge color="blue">
-                  Processing: {results.filter(r => r.status === 'processing').length}
-                </Badge>
-                <Badge color="gray">
-                  Pending: {results.filter(r => r.status === 'pending').length}
-                </Badge>
+                {isProcessing && (
+                  <>
+                    <Badge color="blue">
+                      Processing: {results.filter(r => r.status === 'processing').length}
+                    </Badge>
+                    <Badge color="gray">
+                      Pending: {results.filter(r => r.status === 'pending').length}
+                    </Badge>
+                  </>
+                )}
               </Flex>
 
               {/* Individual Results */}
@@ -294,7 +350,7 @@ https://example.com/article-3"
         {/* Instructions */}
         <Card style={{ padding: '20px', backgroundColor: 'var(--blue-2)', border: '1px solid var(--blue-6)' }}>
           <Flex direction="column" gap="3">
-            <Heading size="4" style={{ color: 'var(--blue-11)' }}>How to Use</Heading>
+            <Heading size="4" style={{ color: 'var(--blue-11)' }}>✨ Real-Time Bulk Scraping</Heading>
             <Flex direction="column" gap="2">
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
                 1. <strong>Select Organization:</strong> Choose the organization these articles belong to
@@ -303,10 +359,13 @@ https://example.com/article-3"
                 2. <strong>Add URLs:</strong> Paste URLs one per line (@ prefix is optional and will be removed)
               </Text>
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
-                3. <strong>Start Scraping:</strong> Click the button to begin processing all URLs
+                3. <strong>Start Real-Time Scraping:</strong> URLs are processed one by one with live updates
               </Text>
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
-                4. <strong>Monitor Progress:</strong> Watch the results update in real-time below
+                4. <strong>Watch Progress:</strong> See results appear instantly as each article is scraped
+              </Text>
+              <Text size="2" style={{ color: 'var(--blue-11)' }}>
+                💡 <strong>Tip:</strong> Articles appear on the homepage immediately after successful scraping
               </Text>
             </Flex>
           </Flex>
