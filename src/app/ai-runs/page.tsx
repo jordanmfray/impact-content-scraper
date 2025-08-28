@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Box, Heading, Text, Flex, Card, Button, Badge, Table, Link as RadixLink, Select, TextField, Spinner } from "@radix-ui/themes"
+import { Box, Heading, Text, Flex, Card, Button, Badge, Table, Link as RadixLink } from "@radix-ui/themes"
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { UploadSimple } from "@phosphor-icons/react/dist/ssr"
 
 interface AiRun {
   id: string
@@ -26,11 +27,7 @@ interface AiRun {
   }
 }
 
-interface Organization {
-  id: string
-  name: string
-  logo?: string
-}
+
 
 function StatusBadge({ status }: { status: string }) {
   const colorMap = {
@@ -52,18 +49,9 @@ export default function AiRunsPage() {
   const [runs, setRuns] = useState<AiRun[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('')
-  
-  // Wizard state
-  const [organizations, setOrganizations] = useState<Organization[]>([])
-  const [selectedOrgId, setSelectedOrgId] = useState<string>('')
-  const [inputUrl, setInputUrl] = useState<string>('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState<string>('')
-  const [submitError, setSubmitError] = useState<string>('')
 
   useEffect(() => {
     fetchRuns()
-    fetchOrganizations()
   }, [statusFilter])
 
   const fetchRuns = async () => {
@@ -84,67 +72,6 @@ export default function AiRunsPage() {
     }
   }
 
-  const fetchOrganizations = async () => {
-    try {
-      const response = await fetch('/api/organizations')
-      const data = await response.json()
-      
-      if (data.success) {
-        setOrganizations(data.organizations)
-      }
-    } catch (error) {
-      console.error('Failed to fetch organizations:', error)
-    }
-  }
-
-  const handleSubmitScraping = async () => {
-    if (!selectedOrgId || !inputUrl) {
-      setSubmitError('Please select an organization and enter a URL')
-      return
-    }
-
-    setIsSubmitting(true)
-    setSubmitError('')
-    setSubmitMessage('')
-
-    try {
-      const response = await fetch('/api/scrape-article', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: inputUrl,
-          organizationId: selectedOrgId,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        setSubmitMessage(
-          data.result.duplicate 
-            ? `Article already exists: "${data.result.title}"`
-            : `Successfully created article: "${data.result.title}"`
-        )
-        setInputUrl('')
-        setSelectedOrgId('')
-        
-        // Refresh the runs list
-        setTimeout(() => {
-          fetchRuns()
-        }, 1000)
-      } else {
-        setSubmitError(data.error || 'Failed to scrape article')
-      }
-    } catch (error) {
-      setSubmitError('Network error occurred')
-      console.error('Scraping submission error:', error)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   if (loading) {
     return (
       <Box style={{ 
@@ -160,89 +87,22 @@ export default function AiRunsPage() {
 
   return (
     <Box style={{ 
-      marginLeft: '338px',
+      marginLeft: '310px',
       marginRight: '34px',
       paddingTop: '24px',
       paddingBottom: '24px'
     }}>
       <Flex direction="column" gap="6">
         {/* Header */}
-        <Flex direction="column" gap="2">
+        <Flex justify="between" align="center">
           <Heading size="6" weight="light">Scrape Log</Heading>
+          <Link href="/bulk-scrape">
+            <Button variant="solid" size="3">
+              <UploadSimple size={16} />
+              Bulk Scraping
+            </Button>
+          </Link>
         </Flex>
-
-        {/* Article Scraping Wizard */}
-        <Card>
-          <Flex direction="column" gap="4">
-            <Heading size="5">Scrape New Webpage</Heading>
-            <Text size="3" color="gray">
-              Select an organization and paste a URL to scrape and create a new article
-            </Text>
-            
-            <Flex gap="3" align="end" wrap="wrap">
-              <Flex direction="column" gap="2" style={{ minWidth: '200px' }}>
-                <Text size="2" weight="medium">Organization</Text>
-                <Select.Root value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                  <Select.Trigger placeholder="Select organization..." />
-                  <Select.Content>
-                    {organizations.map((org) => (
-                      <Select.Item key={org.id} value={org.id}>
-                        <Flex align="center" gap="2">
-                          {org.logo && (
-                            <img 
-                              src={org.logo} 
-                              alt={org.name}
-                              style={{ width: '16px', height: '16px', borderRadius: '2px' }}
-                            />
-                          )}
-                          {org.name}
-                        </Flex>
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </Flex>
-
-              <Flex direction="column" gap="2" style={{ flex: 1, minWidth: '300px' }}>
-                <Text size="2" weight="medium">Article URL</Text>
-                <TextField.Root 
-                  value={inputUrl}
-                  onChange={(e) => setInputUrl(e.target.value)}
-                  placeholder="https://example.com/article..."
-                  size="3"
-                />
-              </Flex>
-
-              <Button 
-                onClick={handleSubmitScraping}
-                disabled={isSubmitting || !selectedOrgId || !inputUrl}
-                size="3"
-              >
-                {isSubmitting ? (
-                  <Flex align="center" gap="2">
-                    <Spinner size="1" />
-                    Scraping...
-                  </Flex>
-                ) : (
-                  'Scrape Article'
-                )}
-              </Button>
-            </Flex>
-
-            {/* Feedback Messages */}
-            {submitMessage && (
-              <Text size="2" style={{ color: 'green' }}>
-                ✅ {submitMessage}
-              </Text>
-            )}
-            
-            {submitError && (
-              <Text size="2" style={{ color: 'red' }}>
-                ❌ {submitError}
-              </Text>
-            )}
-          </Flex>
-        </Card>
 
         {/* Filters */}
         <Card>
