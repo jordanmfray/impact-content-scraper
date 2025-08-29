@@ -3,6 +3,7 @@ import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
 import { firecrawlExtract, firecrawlExtractStructured } from '@/lib/firecrawl';
 import { prisma } from '@/lib/db';
+import { analyzeInspiration } from '@/ai-functions/analyzeInspiration';
 
 // Simple state interface for the entire pipeline
 interface ArticlePipelineState {
@@ -234,49 +235,20 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
     console.log('\n✅ Step 2: Skipping enrichment (already extracted structured data)');
   }
 
-  // STEP 3: Inspiration Analysis
+  // STEP 3: Inspiration Analysis (using modular function)
   console.log('\n⭐ Step 3: Inspiration Analysis');
   
   try {
-    const inspirationResult = await generateObject({
-      model: openai('gpt-4o-mini'),
-      system: `You are an expert at analyzing nonprofit and impact stories for transformation potential. You help faith-based investors identify which articles contain meaningful stories of change versus basic informational content.`,
-      prompt: `Analyze this article for inspirational and transformational content. Consider:
-
-TRANSFORMATIONAL INDICATORS (HIGH rating):
-- Personal stories of lives changed or transformed
-- Specific examples of people overcoming challenges  
-- Measurable impact on communities or individuals
-- Stories of hope, breakthrough moments, or dramatic positive change
-- Evidence of spiritual, emotional, or material transformation
-
-MODERATELY INSPIRING (MEDIUM rating):
-- General positive impact or progress
-- Organizational achievements or milestones
-- Community improvements without specific personal stories
-- Educational or awareness content with some emotional resonance
-
-BASIC INFORMATION (LOW rating):
-- Press releases, announcements, or administrative updates
-- Financial reports or operational information
-- General news without personal impact stories
-- Purely factual content without emotional or transformation elements
-
-Title: ${state.title}
-Summary: ${state.summary}
-Content Preview: ${state.scrapedContent.substring(0, 3000)}
-
-Rate the inspiration level:`,
-      schema: z.object({
-        inspirationRating: z.enum(['low', 'medium', 'high']),
-        reasoning: z.string().describe('Brief explanation of why this rating was assigned')
-      }),
+    const inspirationResult = await analyzeInspiration({
+      title: state.title,
+      summary: state.summary,
+      content: state.scrapedContent
     });
 
-    state.inspirationRating = inspirationResult.object.inspirationRating;
+    state.inspirationRating = inspirationResult.rating;
     state.inspirationAnalysisComplete = true;
     
-    console.log(`✅ Inspiration analysis complete: ${state.inspirationRating} - ${inspirationResult.object.reasoning}`);
+    console.log(`✅ Inspiration analysis complete: ${state.inspirationRating} - ${inspirationResult.reasoning}`);
 
     // Update AI run with inspiration analysis
     if (aiRunId) {
@@ -354,22 +326,24 @@ Rate the inspiration level:`,
     }
 
     // Create new article as draft for review (simplified architecture - no DiscoveryResult needed)
+    const articleData: any = {
+      organizationId: state.organizationId,
+      url: state.url,
+      title: state.title,
+      summary: state.summary,
+      content: state.scrapedContent,
+      author: state.author,
+      publishedAt: parsedPublishedAt,
+      ogImage: state.ogImage,
+      images: state.images || [],
+      sentiment: state.sentiment,
+      keywords: state.keywords,
+      inspirationRating: state.inspirationRating || 'low',
+      status: 'draft', // Articles start as drafts for review
+    };
+
     const article = await prisma.article.create({
-      data: {
-        organizationId: state.organizationId,
-        url: state.url,
-        title: state.title,
-        summary: state.summary,
-        content: state.scrapedContent,
-        author: state.author,
-        publishedAt: parsedPublishedAt,
-        ogImage: state.ogImage,
-        images: state.images || [],
-        sentiment: state.sentiment,
-        keywords: state.keywords,
-        inspirationRating: state.inspirationRating || 'low',
-        status: 'draft', // Articles start as drafts for review
-      },
+      data: articleData,
     });
 
     // Create raw document linked directly to article

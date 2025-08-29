@@ -28,6 +28,8 @@ export default function BulkScrapePage() {
   const [results, setResults] = useState<ScrapeResult[]>([])
   const [loadingOrgs, setLoadingOrgs] = useState(true)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const [concurrency, setConcurrency] = useState(3)
+  const [batchDelay, setBatchDelay] = useState(2000)
 
   // Load organizations on component mount
   useEffect(() => {
@@ -82,67 +84,61 @@ export default function BulkScrapePage() {
     }))
     setResults(initialResults)
 
-    // Process URLs one by one for real-time updates
-    for (let i = 0; i < urlList.length; i++) {
-      const url = urlList[i]
+    try {
+      console.log(`🚀 Starting parallel bulk scrape: ${urlList.length} URLs, concurrency: ${concurrency}, delay: ${batchDelay}ms`)
       
-      // Update status to processing
-      setResults(prev => prev.map((result, index) => 
-        index === i ? { ...result, status: 'processing' as const } : result
-      ))
-
-      try {
-        // Make individual API call for this URL
-        const response = await fetch('/api/scrape-article', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            url: url,
-            organizationId: selectedOrgId
-          })
+      // Use the new parallel bulk scrape API
+      const response = await fetch('/api/bulk-scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          organizationId: selectedOrgId,
+          urls: urlList,
+          concurrency,
+          batchDelay
         })
+      })
 
-        const data = await response.json()
+      const data = await response.json()
+      
+      if (data.success) {
+        // Map API results to our result format
+        const mappedResults: ScrapeResult[] = data.results.map((result: any) => ({
+          url: result.url,
+          status: result.status as ScrapeResult['status'],
+          message: result.message,
+          articleId: result.articleId
+        }))
         
-        if (data.success) {
-          // Update with success result
-          setResults(prev => prev.map((result, index) => 
-            index === i ? {
-              ...result,
-              status: data.result.duplicate ? 'duplicate' as const : 'success' as const,
-              message: data.result.duplicate 
-                ? `Article already exists: "${data.result.title}"`
-                : `Successfully scraped: "${data.result.title}"`,
-              articleId: data.result.articleId
-            } : result
-          ))
-        } else {
-          // Update with error result
-          setResults(prev => prev.map((result, index) => 
-            index === i ? {
-              ...result,
-              status: 'error' as const,
-              message: `Error: ${data.error || data.details || 'Unknown error'}`
-            } : result
-          ))
-        }
-      } catch (error) {
-        console.error(`Error processing URL ${url}:`, error)
-        setResults(prev => prev.map((result, index) => 
-          index === i ? {
-            ...result,
-            status: 'error' as const,
-            message: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`
-          } : result
-        ))
+        setResults(mappedResults)
+        
+        // Log summary
+        console.log('🎯 Bulk scraping completed:', data.summary)
+        console.log(`✅ Success: ${data.summary.success}/${data.summary.total}`)
+        console.log(`⚠️ Duplicates: ${data.summary.duplicate}`)
+        console.log(`❌ Errors: ${data.summary.error}`)
+      } else {
+        // Handle API error
+        const errorResults: ScrapeResult[] = urlList.map(url => ({
+          url,
+          status: 'error',
+          message: `API Error: ${data.error || 'Unknown error'}`
+        }))
+        setResults(errorResults)
+        console.error('Bulk scraping API error:', data.error)
       }
-
-      // Add a small delay between requests to be respectful
-      if (i < urlList.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
+    } catch (error) {
+      console.error('Bulk scraping failed:', error)
+      
+      // Handle network error
+      const errorResults: ScrapeResult[] = urlList.map(url => ({
+        url,
+        status: 'error',
+        message: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }))
+      setResults(errorResults)
     }
 
     setIsProcessing(false)
@@ -245,6 +241,56 @@ https://example.com/article-3"
                   {urls.split('\n').filter(url => url.trim().length > 0).length} URL(s) entered
                 </Text>
               )}
+            </Flex>
+
+            {/* Parallel Processing Controls */}
+            <Flex direction="column" gap="3">
+              <Text size="3" weight="bold">⚡ Parallel Processing Settings</Text>
+              
+              <Flex gap="4" wrap="wrap">
+                <Flex direction="column" gap="2" style={{ minWidth: '200px' }}>
+                  <Text size="2" weight="medium">Concurrent Requests</Text>
+                  <Select.Root value={concurrency.toString()} onValueChange={(value) => setConcurrency(parseInt(value))}>
+                    <Select.Trigger />
+                    <Select.Content>
+                      <Select.Item value="1">1 (Sequential)</Select.Item>
+                      <Select.Item value="2">2</Select.Item>
+                      <Select.Item value="3">3 (Recommended)</Select.Item>
+                      <Select.Item value="4">4</Select.Item>
+                      <Select.Item value="5">5 (Aggressive)</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
+                  <Text size="1" color="gray">Higher = faster, but may hit rate limits</Text>
+                </Flex>
+
+                <Flex direction="column" gap="2" style={{ minWidth: '200px' }}>
+                  <Text size="2" weight="medium">Batch Delay (ms)</Text>
+                  <Select.Root value={batchDelay.toString()} onValueChange={(value) => setBatchDelay(parseInt(value))}>
+                    <Select.Trigger />
+                    <Select.Content>
+                      <Select.Item value="500">500ms (Fast)</Select.Item>
+                      <Select.Item value="1000">1s</Select.Item>
+                      <Select.Item value="2000">2s (Recommended)</Select.Item>
+                      <Select.Item value="3000">3s</Select.Item>
+                      <Select.Item value="5000">5s (Conservative)</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
+                  <Text size="1" color="gray">Delay between parallel batches</Text>
+                </Flex>
+              </Flex>
+
+              <Box style={{ 
+                padding: '12px', 
+                backgroundColor: 'var(--blue-2)', 
+                borderRadius: 'var(--radius-2)',
+                border: '1px solid var(--blue-6)'
+              }}>
+                <Text size="2" color="blue">
+                  <strong>Performance:</strong> With {concurrency} concurrent requests and {batchDelay}ms delay, 
+                  processing {urls.split('\n').filter(url => url.trim().length > 0).length || 0} URLs will take approximately{' '}
+                  {Math.ceil((urls.split('\n').filter(url => url.trim().length > 0).length || 0) / concurrency) * (batchDelay / 1000 + 15)} seconds
+                </Text>
+              </Box>
             </Flex>
 
             {/* Action Buttons */}
