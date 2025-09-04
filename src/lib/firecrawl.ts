@@ -52,11 +52,21 @@ const ArticleSchema = {
 }
 
 // New function using Firecrawl JSON mode for structured extraction
-export async function firecrawlExtractStructured(url: string) {
-  // Check if API key is available
-  if (!process.env.FIRECRAWL_API_KEY) {
-    throw new Error('FIRECRAWL_API_KEY not configured')
-  }
+export async function firecrawlExtractStructured(url: string, organizationName?: string) {
+  try {
+    // Check if API key is available
+    if (!process.env.FIRECRAWL_API_KEY) {
+      return {
+        success: false,
+        error: 'FIRECRAWL_API_KEY not configured',
+        title: null,
+        content: null,
+        summary: null,
+        keywords: [],
+        ogImage: null,
+        images: []
+      }
+    }
 
   console.log('🔥 Using Firecrawl JSON mode to extract structured data from:', url)
   console.log('🔧 Sending request with schema:', JSON.stringify(ArticleSchema, null, 2))
@@ -83,7 +93,16 @@ export async function firecrawlExtractStructured(url: string) {
   if (!r.ok) {
     const errorText = await r.text()
     console.error('🚨 Firecrawl JSON API Error:', r.status, errorText)
-    throw new Error(`Firecrawl structured extract failed: ${r.status} - ${errorText}`)
+    return {
+      success: false,
+      error: `Firecrawl API failed: ${r.status} - ${errorText}`,
+      title: null,
+      content: null,
+      summary: null,
+      keywords: [],
+      ogImage: null,
+      images: []
+    }
   }
 
   const result = await r.json()
@@ -95,14 +114,32 @@ export async function firecrawlExtractStructured(url: string) {
   
   if (!extractedData || !extractedData.title) {
     console.error('❌ Failed to extract structured data, received:', JSON.stringify(result, null, 2))
-    throw new Error('Failed to extract structured data from article')
+    return {
+      success: false,
+      error: 'Failed to extract structured data from article - no title found',
+      title: null,
+      content: null,
+      summary: null,
+      keywords: [],
+      ogImage: null,
+      images: []
+    }
   }
 
   // Check for error page indicators in the raw content
   const errorCheck = detectErrorPageInContent(extractedData.title, extractedData.summary || '', rawMarkdown, url)
   if (!errorCheck.isValid) {
     console.error('❌ Detected error page or hallucinated content:', errorCheck.reasons.join('; '))
-    throw new Error(`Error page detected: ${errorCheck.reasons[0]}`)
+    return {
+      success: false,
+      error: `Error page detected: ${errorCheck.reasons[0]}`,
+      title: null,
+      content: null,
+      summary: null,
+      keywords: [],
+      ogImage: null,
+      images: []
+    }
   }
 
   console.log(`✅ Firecrawl extracted: "${extractedData.title}"`)
@@ -122,6 +159,7 @@ export async function firecrawlExtractStructured(url: string) {
   };
 
   return {
+    success: true,
     data: {
       ...extractedData,
       title: sanitizeText(extractedData.title),
@@ -131,7 +169,27 @@ export async function firecrawlExtractStructured(url: string) {
       // Include body markdown from structured extraction or fallback to separate markdown format
       body_markdown: sanitizeText(extractedData.body_markdown || result.data?.markdown || '')
     },
-    metadata: result.data?.metadata || {}
+    metadata: result.data?.metadata || {},
+    title: sanitizeText(extractedData.title),
+    content: sanitizeText(extractedData.body_markdown || result.data?.markdown || ''),
+    summary: sanitizeText(extractedData.summary),
+    keywords: extractedData.keywords || [],
+    ogImage: extractedData.main_image_url || null,
+    images: extractedData.images || []
+  }
+
+  } catch (error) {
+    console.error('🚨 Unexpected error in firecrawlExtractStructured:', error)
+    return {
+      success: false,
+      error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      title: null,
+      content: null,
+      summary: null,
+      keywords: [],
+      ogImage: null,
+      images: []
+    }
   }
 }
 

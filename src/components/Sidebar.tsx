@@ -7,6 +7,7 @@ import { MagicWand } from "@phosphor-icons/react/dist/ssr/MagicWand";
 import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass";
 import { Rows } from "@phosphor-icons/react/dist/ssr/Rows";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr/ShieldCheck";
+import { GitBranch } from "@phosphor-icons/react/dist/ssr/GitBranch";
 import Image from "next/image";
 
 export function Sidebar() {
@@ -148,6 +149,34 @@ export function Sidebar() {
                   lineHeight: '24px',
                 }}>
                   Article Management
+                </Text>
+              </Flex>
+            </Box>
+          </Link>
+
+          {/* Discovery Pipeline */}
+          <Link href="/discovery-pipeline">
+            <Box
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+              }}
+              className="nav-item"
+            >
+              <Flex align="center" gap="3">
+                <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GitBranch size={20} color="#171717" />
+                </Box>
+                <Text size="3" weight="medium" color="gray" style={{
+                  color: '#171717',
+                  fontFamily: 'F37Jan',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                }}>
+                  Discovery Pipeline
                 </Text>
               </Flex>
             </Box>

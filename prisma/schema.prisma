@@ -23,6 +23,8 @@ model Organization {
   articles      Article[]
   aiRuns        AiRun[]
   urlDiscoveryBatches UrlDiscoveryBatch[]
+  discoverySessions   DiscoverySession[]
+  pipelineArticles    PipelineArticle[]
 }
 
 model Article {
@@ -156,4 +158,93 @@ model UrlDiscoveryBatch {
   @@index([organizationId])
   @@index([status])
   @@index([startedAt])
+}
+
+// ------------------ NEW PIPELINE TABLES ------------------
+
+model DiscoverySession {
+  id              String    @id @default(cuid())
+  organizationId  String
+  newsUrl         String
+  status          String    @default("discovering") // discovering | ready_for_review | reviewed | scraping | analyzing | finalizing | completed | cancelled
+  totalUrls       Int       @default(0)
+  selectedUrls    Int       @default(0)
+  processedUrls   Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  discoveredUrls  DiscoveredUrl[]
+  scrapedContent  ScrapedContent[]
+  pipelineArticles PipelineArticle[]
+  
+  @@index([organizationId])
+  @@index([status])
+}
+
+model DiscoveredUrl {
+  id                  String    @id @default(cuid())
+  discoverySessionId  String
+  url                 String
+  urlType             String    // news | post
+  domain              String
+  titlePreview        String?
+  selectedForScraping Boolean   @default(false)
+  scrapeStatus        String    @default("pending") // pending | scraping | scraped | failed | skipped
+  createdAt           DateTime  @default(now())
+  
+  // Relations
+  discoverySession    DiscoverySession @relation(fields: [discoverySessionId], references: [id], onDelete: Cascade)
+  scrapedContent      ScrapedContent?
+  
+  @@index([discoverySessionId])
+}
+
+model ScrapedContent {
+  id                      String    @id @default(cuid())
+  discoveredUrlId         String    @unique
+  discoverySessionId      String
+  title                   String?
+  summary                 String?
+  markdownContent         String?
+  keywords                String[]
+  sentimentScore          Int?      // -1 to 3
+  sentimentReasoning      String?
+  selectedForFinalization Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  
+  // Relations
+  discoveredUrl           DiscoveredUrl    @relation(fields: [discoveredUrlId], references: [id], onDelete: Cascade)
+  discoverySession        DiscoverySession @relation(fields: [discoverySessionId], references: [id], onDelete: Cascade)
+  pipelineArticle         PipelineArticle?
+  
+  @@index([discoverySessionId])
+}
+
+model PipelineArticle {
+  id                  String    @id @default(cuid())
+  scrapedContentId    String    @unique
+  discoverySessionId  String
+  organizationId      String
+  finalTitle          String
+  summary             String?
+  content             String
+  url                 String
+  ogImage             String?
+  extractedImages     String[]
+  keywords            String[]
+  sentimentScore      Int?
+  urlType             String    // news | post
+  status              String    @default("ready") // ready | published
+  createdAt           DateTime  @default(now())
+  publishedAt         DateTime?
+  
+  // Relations
+  scrapedContent      ScrapedContent   @relation(fields: [scrapedContentId], references: [id], onDelete: Cascade)
+  discoverySession    DiscoverySession @relation(fields: [discoverySessionId], references: [id], onDelete: Cascade)
+  organization        Organization     @relation(fields: [organizationId], references: [id])
+  
+  @@index([discoverySessionId])
+  @@index([organizationId])
 }
