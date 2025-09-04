@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Box, Heading, Text, Flex, Button, Select, TextArea, Card, Badge, Spinner } from '@radix-ui/themes'
+import * as Accordion from '@radix-ui/react-accordion'
 import { CheckCircle } from "@phosphor-icons/react/dist/ssr/CheckCircle"
 import { XCircle } from "@phosphor-icons/react/dist/ssr/XCircle"
 import { Clock } from "@phosphor-icons/react/dist/ssr/Clock"
 import { Warning } from "@phosphor-icons/react/dist/ssr/Warning"
+import { MagnifyingGlass, CaretDown, Link as LinkIcon, Download, Play } from "@phosphor-icons/react/dist/ssr"
 
 interface Organization {
   id: string
   name: string
   logo?: string | null
+  newsUrl?: string | null
 }
 
 interface ScrapeResult {
@@ -18,6 +21,20 @@ interface ScrapeResult {
   status: 'pending' | 'processing' | 'success' | 'error' | 'duplicate'
   message?: string
   articleId?: string
+}
+
+interface DiscoveryBatch {
+  id: string
+  organizationName: string
+  status: string
+  timeframe: number
+  totalUrls: number
+  processedUrls: number
+  successfulUrls: number
+  failedUrls: number
+  startedAt: string
+  completedAt?: string
+  discoveredUrls?: string[]
 }
 
 export default function BulkScrapePage() {
@@ -30,6 +47,11 @@ export default function BulkScrapePage() {
   const resultsRef = useRef<HTMLDivElement>(null)
   const [concurrency, setConcurrency] = useState(3)
   const [batchDelay, setBatchDelay] = useState(2000)
+  
+  // Discovery batch state
+  const [discoveryBatches, setDiscoveryBatches] = useState<DiscoveryBatch[]>([])
+  const [isDiscovering, setIsDiscovering] = useState(false)
+  const [discoveryTimeframe, setDiscoveryTimeframe] = useState(90)
 
   // Load organizations on component mount
   useEffect(() => {
@@ -51,12 +73,110 @@ export default function BulkScrapePage() {
     fetchOrganizations()
   }, [])
 
+  // Fetch discovery batches when organization changes
+  useEffect(() => {
+    if (selectedOrgId) {
+      fetchDiscoveryBatches()
+    } else {
+      setDiscoveryBatches([])
+    }
+  }, [selectedOrgId])
+
+  const fetchDiscoveryBatches = async () => {
+    if (!selectedOrgId) return
+    
+    try {
+      const response = await fetch('/api/bulk-discovery')
+      const data = await response.json()
+      
+      if (data.success) {
+        // Filter batches for the selected organization
+        const orgBatches = data.recentBatches.filter((batch: DiscoveryBatch) => 
+          batch.organizationName === organizations.find(org => org.id === selectedOrgId)?.name
+        )
+        setDiscoveryBatches(orgBatches)
+      }
+    } catch (error) {
+      console.error('Failed to fetch discovery batches:', error)
+    }
+  }
+
   // Auto-scroll to latest results when processing
   useEffect(() => {
     if (isProcessing && resultsRef.current) {
       resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [results, isProcessing])
+
+  const handleDiscovery = async () => {
+    if (!selectedOrgId) {
+      alert('Please select an organization first')
+      return
+    }
+
+    const selectedOrg = organizations.find(org => org.id === selectedOrgId)
+    if (!selectedOrg) {
+      alert('Selected organization not found')
+      return
+    }
+
+    setIsDiscovering(true)
+    
+    try {
+      const response = await fetch('/api/url-discovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: selectedOrgId,
+          organizationName: selectedOrg.name,
+          timeframe: discoveryTimeframe
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        // Refresh discovery batches
+        setTimeout(() => {
+          fetchDiscoveryBatches()
+        }, 1000)
+      } else {
+        alert(`Discovery failed: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Discovery failed:', error)
+      alert('Discovery failed. Please try again.')
+    } finally {
+      setIsDiscovering(false)
+    }
+  }
+
+  const loadUrlsFromBatch = (batch: DiscoveryBatch) => {
+    if (batch.discoveredUrls && batch.discoveredUrls.length > 0) {
+      setUrls(batch.discoveredUrls.join('\n'))
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'discovering':
+        return <Badge color="blue"><Spinner size="1" style={{ marginRight: '4px' }} />Discovering</Badge>
+      case 'ready_for_processing':
+        return <Badge color="green">Ready</Badge>
+      case 'processing':
+        return <Badge color="orange"><Spinner size="1" style={{ marginRight: '4px' }} />Processing</Badge>
+      case 'completed':
+        return <Badge color="green">Completed</Badge>
+      case 'failed':
+        return <Badge color="red">Failed</Badge>
+      default:
+        return <Badge color="gray">{status}</Badge>
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
+  }
 
   const handleBulkScrape = async () => {
     if (!selectedOrgId || !urls.trim()) {
@@ -190,9 +310,149 @@ export default function BulkScrapePage() {
         <Flex direction="column" gap="2">
           <Heading size="6" weight="light">Bulk Article Scraping</Heading>
           <Text size="3" color="gray">
-            Add multiple URLs to scrape articles for a specific organization
+            Discover URLs automatically or add them manually to scrape articles for a specific organization
           </Text>
         </Flex>
+
+        {/* Discovery Section */}
+        {selectedOrgId && (
+          <Card style={{ padding: '24px' }}>
+            <Flex direction="column" gap="4">
+              <Flex justify="between" align="center">
+                <Heading size="4">🔍 URL Discovery</Heading>
+                <Flex gap="2" align="center">
+                  <Select.Root value={discoveryTimeframe.toString()} onValueChange={(value) => setDiscoveryTimeframe(parseInt(value))}>
+                    <Select.Trigger style={{ width: '120px' }} />
+                    <Select.Content>
+                      <Select.Item value="7">7 days</Select.Item>
+                      <Select.Item value="14">14 days</Select.Item>
+                      <Select.Item value="30">30 days</Select.Item>
+                      <Select.Item value="60">60 days</Select.Item>
+                      <Select.Item value="90">90 days</Select.Item>
+                      <Select.Item value="180">180 days</Select.Item>
+                      <Select.Item value="365">365 days</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
+                  <Button 
+                    onClick={handleDiscovery}
+                    disabled={isDiscovering}
+                    size="2"
+                  >
+                    {isDiscovering ? (
+                      <>
+                        <Spinner size="1" />
+                        Discovering...
+                      </>
+                    ) : (
+                      <>
+                        <MagnifyingGlass size={16} />
+                        Start Discovery
+                      </>
+                    )}
+                  </Button>
+                </Flex>
+              </Flex>
+
+              {discoveryBatches.length > 0 ? (
+                <Accordion.Root type="multiple" style={{ width: '100%' }}>
+                  {discoveryBatches.slice(0, 5).map((batch) => (
+                    <Accordion.Item
+                      key={batch.id}
+                      value={batch.id}
+                      style={{
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <Accordion.Header>
+                        <Accordion.Trigger
+                          style={{
+                            width: '100%',
+                            padding: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          <Flex align="center" gap="4" style={{ flex: 1 }}>
+                            <Flex align="center" gap="2" style={{ minWidth: '100px' }}>
+                              {getStatusBadge(batch.status)}
+                            </Flex>
+                            <Flex align="center" gap="4" style={{ flex: 1 }}>
+                              <Text size="2" color="blue">{batch.totalUrls} URLs</Text>
+                              <Text size="2" color="gray">{batch.timeframe} days</Text>
+                              <Text size="1" color="gray">{formatDate(batch.startedAt)}</Text>
+                            </Flex>
+                            <Flex gap="2" align="center">
+                              {batch.discoveredUrls && batch.discoveredUrls.length > 0 && (
+                                <Button
+                                  size="1"
+                                  variant="soft"
+                                  color="blue"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    loadUrlsFromBatch(batch)
+                                  }}
+                                >
+                                  <Download size={12} />
+                                  Load URLs
+                                </Button>
+                              )}
+                              <CaretDown size={16} />
+                            </Flex>
+                          </Flex>
+                        </Accordion.Trigger>
+                      </Accordion.Header>
+                      <Accordion.Content
+                        style={{
+                          padding: '0 16px 16px 16px',
+                          borderTop: '1px solid #f3f4f6'
+                        }}
+                      >
+                        <Box>
+                          <Text size="2" weight="medium" style={{ marginBottom: '12px', display: 'block' }}>
+                            Discovered URLs ({batch.totalUrls}):
+                          </Text>
+                          {batch.discoveredUrls && batch.discoveredUrls.length > 0 ? (
+                            <Flex direction="column" gap="2">
+                              {batch.discoveredUrls.map((url, index) => (
+                                <Flex key={index} align="center" gap="2" style={{ padding: '8px', backgroundColor: '#f9fafb', borderRadius: '4px' }}>
+                                  <LinkIcon size={14} color="#6b7280" />
+                                  <Text size="1" style={{ fontFamily: 'monospace', flex: 1 }}>
+                                    {index + 1}. {url}
+                                  </Text>
+                                  <Button
+                                    size="1"
+                                    variant="ghost"
+                                    onClick={() => window.open(url, '_blank')}
+                                  >
+                                    Open
+                                  </Button>
+                                </Flex>
+                              ))}
+                            </Flex>
+                          ) : (
+                            <Text size="2" color="gray">No URLs discovered yet</Text>
+                          )}
+                        </Box>
+                      </Accordion.Content>
+                    </Accordion.Item>
+                  ))}
+                </Accordion.Root>
+              ) : (
+                <Text size="2" color="gray">
+                  No recent discoveries. Click "Start Discovery" to find articles automatically.
+                </Text>
+              )}
+            </Flex>
+          </Card>
+        )}
 
         {/* Main Form */}
         <Card style={{ padding: '24px' }}>

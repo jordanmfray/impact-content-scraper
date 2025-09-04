@@ -24,11 +24,12 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.22",
     "@phosphor-icons/react": "^2.1.10",
-    "@prisma/client": "latest",
+    "@prisma/client": "^6.14.0",
     "@radix-ui/themes": "^3.2.1",
     "@supabase/supabase-js": "latest",
     "ai": "^5.0.25",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
     "inngest": "latest",
     "next": "latest",
     "openai": "latest",

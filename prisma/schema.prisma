@@ -13,14 +13,16 @@ model Organization {
   name          String
   description   String?
   website       String?
-  logo          String?
-  bannerImage   String?
+  newsUrl       String?      // URL to organization's news/articles page (e.g., /news, /blog, /press-releases)
+  tags          String[]     // Categorization tags (e.g., healthcare, education, international)
+  ein           String?      // Employer Identification Number
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   
   // Relations
   articles      Article[]
   aiRuns        AiRun[]
+  urlDiscoveryBatches UrlDiscoveryBatch[]
 }
 
 model Article {
@@ -39,8 +41,14 @@ model Article {
   canonicalUrl   String?
   inspirationRating String? // low | medium | high - how inspiring/transformational the story is
   
+  // Content validation results
+  organizationSentiment String? // positive | neutral | negative - sentiment toward the organization specifically
+  contentType          String? // news | press_release | blog_post | list_view | other
+  organizationRelevance String? // high | medium | low - how much the article is about the organization
+  validationReasons    String[] // reasons for acceptance/rejection
+  
   // Processing status
-  status         String    @default("draft") // draft | processing | published | failed
+  status         String    @default("draft") // draft | processing | published | failed | rejected
   featured       Boolean   @default(false)   // Whether this article is featured in spotlight
   
   // Metadata
@@ -116,4 +124,36 @@ model AiRun {
   @@index([status])
   @@index([startedAt])
   @@index([organizationId])
+}
+
+model UrlDiscoveryBatch {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  
+  // Batch metadata
+  status                String   // discovering | ready_for_processing | processing | completed | failed
+  timeframe            Int      // days to look back for articles
+  
+  // Discovery results
+  discoveredUrls       String[] // URLs found during discovery
+  totalUrls            Int      @default(0)
+  processedUrls        Int      @default(0)
+  successfulUrls       Int      @default(0)
+  failedUrls           Int      @default(0)
+  
+  // Processing results
+  processingResults    Json?    // Detailed results of URL processing
+  
+  // Timestamps
+  startedAt            DateTime @default(now())
+  discoveredAt         DateTime?
+  processingStartedAt  DateTime?
+  completedAt          DateTime?
+  
+  // Relations
+  organization         Organization @relation(fields: [organizationId], references: [id])
+  
+  @@index([organizationId])
+  @@index([status])
+  @@index([startedAt])
 }

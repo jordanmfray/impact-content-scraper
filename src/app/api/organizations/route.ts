@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         logo: true,
+        newsUrl: true,
       },
       orderBy: {
         name: 'asc'

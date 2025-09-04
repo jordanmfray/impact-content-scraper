@@ -66,6 +66,10 @@ export async function GET(request: NextRequest) {
       status: article.status,
       featured: article.featured,
       inspirationRating: article.inspirationRating,
+      organizationSentiment: article.organizationSentiment,
+      contentType: article.contentType,
+      organizationRelevance: article.organizationRelevance,
+      validationReasons: article.validationReasons,
       organization: {
         id: article.organization.id,
         name: article.organization.name,
@@ -146,6 +150,12 @@ export async function PATCH(request: NextRequest) {
         createdAt: updatedArticle.createdAt,
         updatedAt: updatedArticle.updatedAt,
         status: updatedArticle.status,
+        featured: updatedArticle.featured,
+        inspirationRating: updatedArticle.inspirationRating,
+        organizationSentiment: updatedArticle.organizationSentiment,
+        contentType: updatedArticle.contentType,
+        organizationRelevance: updatedArticle.organizationRelevance,
+        validationReasons: updatedArticle.validationReasons,
         organization: {
           id: updatedArticle.organization.id,
           name: updatedArticle.organization.name,

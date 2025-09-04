@@ -1,6 +1,5 @@
-import { Box, Heading, Text, Flex, Card, Grid, Badge, Link } from "@radix-ui/themes";
+import { Box, Heading, Text, Flex, Badge, Link, Table } from "@radix-ui/themes";
 import { ArrowSquareOut } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
-import { Image } from "@phosphor-icons/react/dist/ssr/Image";
 import { prisma } from "@/lib/db";
 
 function extractDomain(url: string): string {
@@ -13,6 +12,17 @@ function extractDomain(url: string): string {
 
 async function getOrganizations() {
   const organizations = await prisma.organization.findMany({
+    include: {
+      _count: {
+        select: {
+          articles: {
+            where: {
+              status: 'published'
+            }
+          }
+        }
+      }
+    },
     orderBy: {
       name: 'asc'
     }
@@ -22,7 +32,17 @@ async function getOrganizations() {
 }
 
 export default async function OrganizationsPage() {
-  const organizations = await getOrganizations();
+  const organizations = (await getOrganizations()) as unknown as Array<{
+    id: string;
+    name: string;
+    website: string | null;
+    ein: string | null;
+    tags: string[];
+    createdAt: Date;
+    _count: {
+      articles: number;
+    };
+  }>;
   
   return (
     <Box style={{ 
@@ -44,40 +64,28 @@ export default async function OrganizationsPage() {
           </Badge>
         </Flex>
 
-        {/* Organizations Grid */}
-        <Grid columns={{ initial: "1", sm: "2", lg: "3", xl: "5" }} gap="4">
-          {organizations.map((org) => (
-            <Card key={org.id} style={{ height: 'fit-content' }}>
-              <Flex direction="column" gap="4">
-                {/* Logo Placeholder */}
-                <Box
-                  style={{
-                    width: '100%',
-                    height: 120,
-                    backgroundColor: 'var(--gray-3)',
-                    borderRadius: 8,
-                    border: '1px dashed var(--gray-6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <Flex direction="column" align="center" gap="2">
-                    <Image size={24} color="var(--gray-8)" />
-                    <Text size="1" color="gray" style={{ textAlign: 'center' }}>
-                      Logo Placeholder
-                    </Text>
-                  </Flex>
-                </Box>
+        {/* Organizations Table */}
+        {organizations.length > 0 ? (
+          <Table.Root>
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Website</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>EIN</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Published Articles</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Tags</Table.ColumnHeaderCell>
+              </Table.Row>
+            </Table.Header>
 
-                {/* Organization Details */}
-                <Flex direction="column" gap="3">
-                  {/* Name and Website */}
-                  <Flex direction="column" gap="2">
-                    <Heading size="4" weight="bold">
-                      {org.name}
-                    </Heading>
-                    {org.website && (
+            <Table.Body>
+              {organizations.map((org) => (
+                <Table.Row key={org.id}>
+                  <Table.RowHeaderCell>
+                    <Text weight="medium">{org.name}</Text>
+                  </Table.RowHeaderCell>
+                  
+                  <Table.Cell>
+                    {org.website ? (
                       <Link 
                         href={org.website} 
                         target="_blank" 
@@ -89,52 +97,54 @@ export default async function OrganizationsPage() {
                           <ArrowSquareOut size={12} />
                         </Flex>
                       </Link>
+                    ) : (
+                      <Text color="gray" size="2">—</Text>
                     )}
-                  </Flex>
-
-                  {/* Description */}
-                  {org.description && (
-                    <Text 
-                      size="2" 
-                      color="gray" 
-                      style={{ 
-                        lineHeight: 1.5,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 4,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      {org.description}
-                    </Text>
-                  )}
-
-
-
-                  {/* Metadata */}
-                  <Flex justify="between" align="center" style={{ paddingTop: 8, borderTop: '1px solid var(--gray-6)' }}>
-                    <Text size="1" color="gray">
-                      Added {new Date(org.createdAt).toLocaleDateString()}
-                    </Text>
-                  </Flex>
-                </Flex>
-              </Flex>
-            </Card>
-          ))}
-        </Grid>
-
-        {/* Empty State */}
-        {organizations.length === 0 && (
-          <Card>
-            <Flex direction="column" gap="3" align="center" style={{ padding: 40 }}>
-              <Text size="5" weight="bold" color="gray">
-                No Organizations Found
-              </Text>
-              <Text color="gray" style={{ textAlign: 'center' }}>
-                Organizations will appear here once they are added to the database.
-              </Text>
-            </Flex>
-          </Card>
+                  </Table.Cell>
+                  
+                  <Table.Cell>
+                    {org.ein ? (
+                      <Text size="2">{org.ein}</Text>
+                    ) : (
+                      <Text color="gray" size="2">—</Text>
+                    )}
+                  </Table.Cell>
+                  
+                  <Table.Cell>
+                    <Text size="2">{org._count.articles}</Text>
+                  </Table.Cell>
+                  
+                  <Table.Cell>
+                    {org.tags && org.tags.length > 0 ? (
+                      <Flex gap="1" wrap="wrap">
+                        {org.tags.slice(0, 3).map((tag: string, index: number) => (
+                          <Badge key={index} color="blue" size="1">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {org.tags.length > 3 && (
+                          <Badge color="gray" size="1">
+                            +{org.tags.length - 3}
+                          </Badge>
+                        )}
+                      </Flex>
+                    ) : (
+                      <Text color="gray" size="2">—</Text>
+                    )}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        ) : (
+          <Box style={{ textAlign: 'center', padding: '40px' }}>
+            <Text size="5" weight="bold" color="gray">
+              No Organizations Found
+            </Text>
+            <Text color="gray" style={{ marginTop: '8px' }}>
+              Organizations will appear here once they are added to the database.
+            </Text>
+          </Box>
         )}
       </Flex>
     </Box>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Box, Heading, Text, Flex, Button, Card, Badge, Spinner, Table, IconButton, Dialog, TextField, TextArea } from '@radix-ui/themes'
-import { CheckCircle, XCircle, Eye, PencilSimple, Trash, CaretLeft, CaretRight } from "@phosphor-icons/react/dist/ssr"
+import { CheckCircle, XCircle, Eye, PencilSimple, Trash, CaretLeft, CaretRight, ArrowCounterClockwise, X } from "@phosphor-icons/react/dist/ssr"
 
 interface Article {
   id: string
@@ -21,6 +21,10 @@ interface Article {
   status: string
   featured: boolean
   inspirationRating?: string | null
+  organizationSentiment?: string | null
+  contentType?: string | null
+  organizationRelevance?: string | null
+  validationReasons: string[]
   organization: {
     id: string
     name: string
@@ -207,6 +211,20 @@ export default function AdminArticlesPage() {
     }
   }
 
+  const handleReject = async (article: Article) => {
+    await updateArticle(article.id, { 
+      status: 'rejected',
+      validationReasons: ['Manually rejected by admin']
+    })
+  }
+
+  const handleRestoreFromRejected = async (article: Article) => {
+    const confirmed = confirm(`Are you sure you want to restore "${article.title}" from rejected status? This will move it back to draft for review.`)
+    if (confirmed) {
+      await updateArticle(article.id, { status: 'draft' })
+    }
+  }
+
   const handleEdit = (article: Article) => {
     setEditingArticle(article)
     setEditForm({
@@ -297,6 +315,8 @@ export default function AdminArticlesPage() {
         return <Badge color="orange">Processing</Badge>
       case 'failed':
         return <Badge color="red">Failed</Badge>
+      case 'rejected':
+        return <Badge color="red">Rejected</Badge>
       default:
         return <Badge color="gray">{status}</Badge>
     }
@@ -379,6 +399,14 @@ export default function AdminArticlesPage() {
           >
             Published
           </Button>
+          <Button 
+            variant={statusFilter === 'rejected' ? 'solid' : 'soft'} 
+            onClick={() => handleStatusFilterChange('rejected')}
+            size="2"
+            color="red"
+          >
+            Rejected
+          </Button>
         </Flex>
       </Card>
 
@@ -398,6 +426,7 @@ export default function AdminArticlesPage() {
                 <Table.ColumnHeaderCell>Published Date</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Date Scraped</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Article Title</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Validation</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>URL</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Organization</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Images</Table.ColumnHeaderCell>
@@ -431,6 +460,24 @@ export default function AdminArticlesPage() {
                     }}>
                       {article.title}
                     </Text>
+                  </Table.Cell>
+                  <Table.Cell style={{ maxWidth: '200px' }}>
+                    {article.status === 'rejected' && article.validationReasons && article.validationReasons.length > 0 ? (
+                      <Text size="1" color="red" style={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }} title={article.validationReasons.join('; ')}>
+                        {article.validationReasons.join('; ')}
+                      </Text>
+                    ) : article.organizationSentiment ? (
+                      <Text size="1" color="gray">
+                        {article.organizationSentiment} • {article.contentType} • {article.organizationRelevance}
+                      </Text>
+                    ) : (
+                      <Text size="1" color="gray">-</Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell style={{ maxWidth: '200px' }}>
                     <Text size="2" color="blue" style={{ 
@@ -489,14 +536,39 @@ export default function AdminArticlesPage() {
                         <PencilSimple size={14} />
                       </IconButton>
                       {article.status === 'draft' && (
+                        <>
+                          <IconButton 
+                            size="1" 
+                            variant="soft" 
+                            color="green"
+                            onClick={() => handlePublish(article)}
+                            disabled={isUpdating}
+                            title="Publish Article"
+                          >
+                            <CheckCircle size={14} />
+                          </IconButton>
+                          <IconButton 
+                            size="1" 
+                            variant="soft" 
+                            color="orange"
+                            onClick={() => handleReject(article)}
+                            disabled={isUpdating}
+                            title="Reject Article"
+                          >
+                            <X size={14} />
+                          </IconButton>
+                        </>
+                      )}
+                      {article.status === 'rejected' && (
                         <IconButton 
                           size="1" 
                           variant="soft" 
-                          color="green"
-                          onClick={() => handlePublish(article)}
+                          color="blue"
+                          onClick={() => handleRestoreFromRejected(article)}
                           disabled={isUpdating}
+                          title="Restore to Draft"
                         >
-                          <CheckCircle size={14} />
+                          <ArrowCounterClockwise size={14} />
                         </IconButton>
                       )}
                       <IconButton 

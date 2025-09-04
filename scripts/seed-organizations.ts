@@ -7,6 +7,9 @@ interface OrganizationData {
   name: string
   description: string
   website: string
+  newsUrl?: string
+  tags?: string[]
+  ein?: string
 }
 
 async function parseOrganizationsFromMarkdown(): Promise<OrganizationData[]> {
@@ -63,13 +66,7 @@ async function seedOrganizations() {
         }
       })
       if (existing) {
-        // Update existing organization with website if missing
-        if (!('website' in existing) || !existing.website && org.website) {
-          // 'website' is not a valid field for update; update only allowed fields (e.g., description)
-          // If you want to update website, you need to add it to your Prisma schema and migrate.
-          // For now, skip updating website to avoid type error.
-          console.log(`⏭️  Skipping ${org.name} - cannot update website (field not in schema)`)
-        }
+        console.log(`⏭️  Skipping ${org.name} - already exists`)
         continue
       }
       
@@ -79,6 +76,9 @@ async function seedOrganizations() {
           name: org.name,
           description: org.description,
           website: org.website,
+          newsUrl: org.newsUrl || null,
+          tags: org.tags || [],
+          ein: org.ein || null,
         }
       })
 

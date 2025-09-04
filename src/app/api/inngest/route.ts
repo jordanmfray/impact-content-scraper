@@ -1,10 +1,18 @@
-// Inngest API route - currently unused since we're using direct execution
-// Can be removed or kept for future trigger-based functionality
+// Inngest API route for handling long-running AI workflows
 
 import { serve } from 'inngest/next'
 import { inngest } from '@/inngest/client'
+import { 
+  urlDiscoveryJob, 
+  batchProcessingJob, 
+  organizationDiscoveryJob 
+} from '@/inngest/urlDiscovery'
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [],
+  functions: [
+    urlDiscoveryJob,
+    batchProcessingJob,
+    organizationDiscoveryJob
+  ],
 })

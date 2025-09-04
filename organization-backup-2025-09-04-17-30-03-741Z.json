@@ -1,0 +1,759 @@
+{
+  "exportDate": "2025-09-04T17:30:03.741Z",
+  "totalOrganizations": 40,
+  "organizations": [
+    {
+      "id": "cmf5mrrc7000cdm2onmf4rci7",
+      "name": "Alpha",
+      "description": "Equipping churches, ministries, and individuals to help others discover and develop a relationship with Jesus is our mission. We estimate that more than a million people in the U.S. have experienced Alpha for themselves in the last three years, and we are grateful to be a part of making that journey possible.",
+      "website": "https://alphausa.org/",
+      "newsUrl": null,
+      "tags": [
+        "evangelism & missions",
+        "church & ministry support",
+        "community outreach & social impact",
+        "ministry leaders",
+        "adults",
+        "families",
+        "parents",
+        "atrisk youth"
+      ],
+      "ein": "13-3962840",
+      "createdAt": "2025-09-04T16:38:42.728Z",
+      "updatedAt": "2025-09-04T16:38:42.728Z"
+    },
+    {
+      "id": "cmf5mrrcq000ndm2o9gmbor3a",
+      "name": "American Association of Christian Counselors",
+      "description": "The World's Premiere and Largest Christian Mental Health Organization. Dedicated to Distinctly Christian Clinical Excellence.",
+      "website": "https://www.aacc.net",
+      "newsUrl": "https://aacc.net/category/aacc-blog/",
+      "tags": [
+        "mental health & counseling",
+        "mental health",
+        "families",
+        "ministry leaders",
+        "crisis support",
+        "adults"
+      ],
+      "ein": "54-2041550",
+      "createdAt": "2025-09-04T16:38:42.746Z",
+      "updatedAt": "2025-09-04T16:38:42.746Z"
+    },
+    {
+      "id": "cmf5mrrbn0001dm2o3be2j4pq",
+      "name": "Best Christian Workplaces",
+      "description": "Best Christian Workplaces helps you build a flourishing workplace culture. We have served over 1,000 ministry partners with our PhD-backed survey data.",
+      "website": "https://www.workplaces.org",
+      "newsUrl": "https://workplaces.org/articles",
+      "tags": [
+        "church & ministry support",
+        "business, leadership & workplace ministry",
+        "education & training",
+        "ministry leaders",
+        "adults",
+        "families",
+        "mental health",
+        "education"
+      ],
+      "ein": "45-2705963",
+      "createdAt": "2025-09-04T16:38:42.708Z",
+      "updatedAt": "2025-09-04T16:38:42.708Z"
+    },
+    {
+      "id": "cmf5mrrda0010dm2omnhk5ou8",
+      "name": "Biblica",
+      "description": "Biblica is a global Bible ministry, releasing the world’s most widely read Scriptures for maximum Gospel impact. Now in its third century of mission, Biblica continues to produce relevant and reliable Scripture translations and innovative resources that power the Bible ministry of hundreds of global mission organizations and invite millions to discover the love of Jesus Christ.",
+      "website": "https://www.biblica.com",
+      "newsUrl": "https://www.biblica.com/blog/",
+      "tags": [
+        "evangeism & missions",
+        "community outreach & social impact",
+        "discipleship & faith formation",
+        "adults",
+        "families",
+        "ministry leaders",
+        "education",
+        "atrisk youth"
+      ],
+      "ein": "84-1194554",
+      "createdAt": "2025-09-04T16:38:42.766Z",
+      "updatedAt": "2025-09-04T16:38:42.766Z"
+    },
+    {
+      "id": "cmf5mrrdb0011dm2oz51wrqh6",
+      "name": "Bless App",
+      "description": "The Bless App, formerly 'Bless Every Home', was created to equip and unleash followers of Jesus to be a blessing to their community. It provides technology that serves, encourages, and challenges people and churches to put their faith into action.",
+      "website": "https://app.blesseveryhome.com/",
+      "newsUrl": null,
+      "tags": [
+        "community outreach & social impact",
+        "discipleship & faith formation",
+        "ministry leaders",
+        "families",
+        "crisis support",
+        "mental health",
+        "atrisk youth"
+      ],
+      "ein": "93-4473316",
+      "createdAt": "2025-09-04T16:38:42.768Z",
+      "updatedAt": "2025-09-04T16:38:42.768Z"
+    },
+    {
+      "id": "cmf5mrrd2000vdm2on27q1sjc",
+      "name": "Care4Pastors",
+      "description": "A global network empowering people to experience and reproduce great relationships through loving God and others. We exist to equip, train, resource, and support pastors, network and ministry leaders, to do their ministries with great commandment love.",
+      "website": "https://www.greatcommandment.net",
+      "newsUrl": null,
+      "tags": [
+        "church & ministry support",
+        "community outreach & social impact",
+        "ministry leaders"
+      ],
+      "ein": "30-0113581",
+      "createdAt": "2025-09-04T16:38:42.759Z",
+      "updatedAt": "2025-09-04T16:38:42.759Z"
+    },
+    {
+      "id": "cmf5mrrci000idm2oubidj6l9",
+      "name": "CarePortal",
+      "description": "CarePortal connects communities to meet urgent needs and prevent foster care, making it easy for you to respond to real-time requests anytime, right from your phone. With just a few taps, you can help families stay together and strengthen your community.",
+      "website": "https://www.careportal.org",
+      "newsUrl": "https://www.careportal.org/press-coverage/",
+      "tags": [
+        "community outreach & social impact",
+        "families",
+        "low income",
+        "atrisk youth",
+        "education",
+        "crisis support"
+      ],
+      "ein": "81-6079539",
+      "createdAt": "2025-09-04T16:38:42.738Z",
+      "updatedAt": "2025-09-04T16:38:42.738Z"
+    },
+    {
+      "id": "cmf5mrrd7000ydm2orri8qb74",
+      "name": "Carey Nieuwhof",
+      "description": "Carey Nieuwhof is a best-selling leadership author, speaker, podcaster, former attorney, and church planter. He hosts one of today’s most influential leadership podcasts, and his online content is accessed by leaders over 1.5 million times a month. He speaks to leaders around the world about leadership, change, and personal growth.",
+      "website": "https://www.careynieuwhof.com",
+      "newsUrl": "https://careynieuwhof.com/blog/",
+      "tags": [
+        "leadership & workplace ministry",
+        "church & ministry support",
+        "adults",
+        "families",
+        "ministry leaders",
+        "atrisk youth",
+        "parents"
+      ],
+      "ein": "",
+      "createdAt": "2025-09-04T16:38:42.763Z",
+      "updatedAt": "2025-09-04T16:38:42.763Z"
+    },
+    {
+      "id": "cmf5mrrcy000sdm2oo2zvlunt",
+      "name": "Christianity Today",
+      "description": "Christianity Today is a global media ministry that engages millions of Christian leaders every month, encouraging and equipping them to advocate for the church and shape the evangelical conversation.",
+      "website": "https://www.christianitytoday.org",
+      "newsUrl": "https://www.christianitytoday.com/news-releases/",
+      "tags": [
+        "media",
+        "evangelism & missions",
+        "community outreach & social impact",
+        "crisis support",
+        "mental health",
+        "families",
+        "atrisk youth",
+        "trafficking surv"
+      ],
+      "ein": "52-0231554",
+      "createdAt": "2025-09-04T16:38:42.754Z",
+      "updatedAt": "2025-09-04T16:38:42.754Z"
+    },
+    {
+      "id": "cmf5mrrcl000kdm2odaq6rno0",
+      "name": "Churches Care",
+      "description": "Churches Care connects individuals with local churches and ministries to provide support and community for those in need.",
+      "website": "https://www.churchescare.com",
+      "newsUrl": "https://www.churchescare.com/blog",
+      "tags": [
+        "mental health & counseling",
+        "community outreach & social impact",
+        "church & ministry support",
+        "mental health",
+        "crisis support",
+        "families",
+        "adults",
+        "seniors"
+      ],
+      "ein": "93-4473316",
+      "createdAt": "2025-09-04T16:38:42.741Z",
+      "updatedAt": "2025-09-04T16:38:42.741Z"
+    },
+    {
+      "id": "cmf5mrrd6000xdm2on46d9ssd",
+      "name": "Church United",
+      "description": "Church United was an idea birthed by local pastors who desired to see greater connection and collaboration between our local churches. Our unity and love for one another is how the world will know and believe the message of Jesus. The Church is the hope of the world and South Florida. God’s people—the Church—are the means by which our cities, neighborhoods, workplaces, and dinner tables are filled with the presence of Jesus Christ (Ephesians 1:23).",
+      "website": "https://www.churchunitedfl.com",
+      "newsUrl": null,
+      "tags": [
+        "church & ministry support",
+        "community outreach & social impact",
+        "ministry leaders",
+        "adults",
+        "families",
+        "parents",
+        "education"
+      ],
+      "ein": "58-1493949",
+      "createdAt": "2025-09-04T16:38:42.762Z",
+      "updatedAt": "2025-09-04T16:38:42.762Z"
+    },
+    {
+      "id": "cmf5mrrcg000hdm2o0awljcuw",
+      "name": "Compassion International",
+      "description": "Compassion International is a Christian child development organization dedicated to releasing children from poverty in Jesus’ name. Founded in 1952, Compassion partners with more than 8,500 local churches in 29 program countries to deliver spiritual, economic, social, and physical care to over two million babies, children, and young adults in poverty.",
+      "website": "https://www.compassion.com",
+      "newsUrl": "https://www.compassion.com/press-center.htm",
+      "tags": [
+        "compassion & humanitarian aid",
+        "community outreach & social impact",
+        "low income",
+        "atrisk youth",
+        "education",
+        "families",
+        "single parents"
+      ],
+      "ein": "36-2423707",
+      "createdAt": "2025-09-04T16:38:42.736Z",
+      "updatedAt": "2025-09-04T16:38:42.736Z"
+    },
+    {
+      "id": "cmf5mrrcn000ldm2ohdo0jj2n",
+      "name": "ECFA",
+      "description": "The Evangelical Council for Financial Accountability (ECFA) is an accreditation agency dedicated to helping Christian ministries earn the public’s trust through adherence to Seven Standards of Responsible Stewardship™.",
+      "website": "https://www.ecfa.org",
+      "newsUrl": null,
+      "tags": [
+        "evangelism & missions",
+        "community outreach & social impact",
+        "compassion & humanitarian aid",
+        "education & training",
+        "ministry leaders",
+        "low income",
+        "atrisk youth",
+        "fosteradoptive p",
+        "homeless"
+      ],
+      "ein": "93-0744698",
+      "createdAt": "2025-09-04T16:38:42.743Z",
+      "updatedAt": "2025-09-04T16:38:42.743Z"
+    },
+    {
+      "id": "cmf5mrrbq0002dm2or84kn6hw",
+      "name": "FOCUS",
+      "description": "The Fellowship of Catholic University Students (FOCUS) invites college students into a growing relationship with Jesus Christ and His Church, inspiring and equipping them for a lifetime of Christ-centered evangelization, discipleship, and friendships in which they lead others to do the same.",
+      "website": "https://www.focus.org",
+      "newsUrl": "https://focus.org/about/news-press-room/#news",
+      "tags": [
+        "evangelism & missions",
+        "discipleship & faith formation",
+        "adults",
+        "ministry leaders",
+        "families",
+        "atrisk youth",
+        "crisis support"
+      ],
+      "ein": "84-1522811",
+      "createdAt": "2025-09-04T16:38:42.710Z",
+      "updatedAt": "2025-09-04T16:38:42.710Z"
+    },
+    {
+      "id": "cmf5mrrbs0003dm2ov7hgojuv",
+      "name": "FORCLT",
+      "description": "For Charlotte is a gospel-centered network of Christian churches collaborating for the good of our city, focusing on uniting the church to transform the city through various initiatives and community engagement.",
+      "website": "https://www.forcharlotte.org",
+      "newsUrl": null,
+      "tags": [
+        "community outreach & social impact",
+        "education & training",
+        "adults",
+        "families",
+        "low income",
+        "atrisk youth",
+        "homeless"
+      ],
+      "ein": "47-4463729",
+      "createdAt": "2025-09-04T16:38:42.712Z",
+      "updatedAt": "2025-09-04T16:38:42.712Z"
+    },
+    {
+      "id": "cmf5mrrba0000dm2oaglw5unx",
+      "name": "For Columbus",
+      "description": "For Columbus is a Christian movement that seeks to unify the city-Church in tangible ways so that the power of the gospel brings about cultural transformation and renewal in Columbus.",
+      "website": "https://www.forcolumbus.org",
+      "newsUrl": "https://www.forcolumbus.org/stories",
+      "tags": [
+        "community outreach & social impact",
+        "church & ministry support",
+        "families",
+        "low income",
+        "atrisk youth",
+        "education",
+        "crisis support"
+      ],
+      "ein": "82-2180507",
+      "createdAt": "2025-09-04T16:38:42.695Z",
+      "updatedAt": "2025-09-04T16:38:42.695Z"
+    },
+    {
+      "id": "cmf5na4v10000dmjyzpheywy2",
+      "name": "Gloo",
+      "description": "We shape technology as a force for good - serving those who serve, to help them scale their purposes, so people flourish and communities thrive.",
+      "website": "https://gloo.com",
+      "newsUrl": "https://gloo.com/press/news",
+      "tags": [],
+      "ein": null,
+      "createdAt": "2025-09-04T16:53:00.061Z",
+      "updatedAt": "2025-09-04T16:53:00.061Z"
+    },
+    {
+      "id": "cmf5mrrcs000odm2oeh6kuygq",
+      "name": "Hope with God",
+      "description": "Hope With God is an online Christian community that connects over 20 million believers across the globe. We provide discipleship and Gospel resources to help people find hope in God through Jesus Christ.",
+      "website": "https://www.hopewithgod.com",
+      "newsUrl": "https://www.hopewithgod.com/learn",
+      "tags": [
+        "community outreach & social impact",
+        "media, publishing & digital ministry",
+        "adults",
+        "families",
+        "ministry leaders",
+        "education",
+        "crisis support"
+      ],
+      "ein": "93-0713827",
+      "createdAt": "2025-09-04T16:38:42.748Z",
+      "updatedAt": "2025-09-04T16:38:42.748Z"
+    },
+    {
+      "id": "cmf5mrrcz000tdm2o0gcvgg7n",
+      "name": "MediShare",
+      "description": "Medi-Share is a nonprofit health care sharing ministry where members voluntarily share each other's medical expenses in accordance with guidelines adopted by the members and administered by Christian Care Ministry.",
+      "website": "https://www.medishare.com",
+      "newsUrl": "https://blog.mychristiancare.org/?__hstc=119087446.59e9a5821d89c9b2bc23b10f1eea4356.1757005721215.1757005721215.1757005721215.1&__hssc=119087446.1.1757005721215&__hsfp=1463317152",
+      "tags": [
+        "healthcare & well-being",
+        "community outreach & social impact",
+        "families",
+        "low income",
+        "people with disa",
+        "seniors",
+        "single parents"
+      ],
+      "ein": "59-3556915",
+      "createdAt": "2025-09-04T16:38:42.755Z",
+      "updatedAt": "2025-09-04T16:38:42.755Z"
+    },
+    {
+      "id": "cmf5mrrc00008dm2ohg276xyr",
+      "name": "MomCo",
+      "description": "The MomCo is a nonprofit dedicated to connecting and empowering moms through community, resources, and support. Find your tribe, join meetups, and access tools to navigate every stage of motherhood.",
+      "website": "https://www.themom.co",
+      "newsUrl": "https://www.themom.co/articles/",
+      "tags": [
+        "community outreach & social impact",
+        "discipleship & faith formation",
+        "families",
+        "parents",
+        "single parents",
+        "fosteradoptive p",
+        "education"
+      ],
+      "ein": "84-0925251",
+      "createdAt": "2025-09-04T16:38:42.721Z",
+      "updatedAt": "2025-09-04T16:38:42.721Z"
+    },
+    {
+      "id": "cmf5mrrc3000adm2otlhy4wgc",
+      "name": "MyCounselor.Online",
+      "description": "Partners For Strong Families exists to strengthen families by increasing access to excellent counseling and marriage resources.",
+      "website": "https://www.strongfamilies.info",
+      "newsUrl": "https://strongfamilies.info/advice/",
+      "tags": [
+        "mental health & counseling",
+        "family & parenting support",
+        "families",
+        "parents",
+        "mental health",
+        "single parents",
+        "crisis support"
+      ],
+      "ein": "27-4824630",
+      "createdAt": "2025-09-04T16:38:42.724Z",
+      "updatedAt": "2025-09-04T16:38:42.724Z"
+    },
+    {
+      "id": "cmf5mrrd0000udm2ob0nha6ss",
+      "name": "Nitrogen Urban Network",
+      "description": "Nitrogen Network equips leaders, pastors, and churches for the work of urban ministry, focusing on community development and leadership training.",
+      "website": "https://www.nitrogennetwork.org",
+      "newsUrl": null,
+      "tags": [
+        "community outreach & social impact",
+        "education & training",
+        "ministry leaders"
+      ],
+      "ein": "81-5088906",
+      "createdAt": "2025-09-04T16:38:42.757Z",
+      "updatedAt": "2025-09-04T16:38:42.757Z"
+    },
+    {
+      "id": "cmf5mrrcj000jdm2ompfe0bx7",
+      "name": "OneNeed",
+      "description": "OneNeed helps churches respond with compassion to every person in need, equipping them to serve their communities with generosity and hope.",
+      "website": "https://www.oneneed.org",
+      "newsUrl": null,
+      "tags": [
+        "compassion & humanitarian aid",
+        "community outreach & social impact",
+        "church & ministry support",
+        "low income",
+        "atrisk youth",
+        "homeless",
+        "fosteradoptive p",
+        "refugees"
+      ],
+      "ein": "27-2769877",
+      "createdAt": "2025-09-04T16:38:42.740Z",
+      "updatedAt": "2025-09-04T16:38:42.740Z"
+    },
+    {
+      "id": "cmf5mrrbx0006dm2ovebnyxu0",
+      "name": "Outreach",
+      "description": "Outreach Inc. has a heart for the local church, helping churches build bridges to the unchurched to effectively share Christ. They provide a comprehensive list of products and services, including digital products, sermon series resources, and more, to over 163,000 churches across the U.S.",
+      "website": "https://www.outreach.com",
+      "newsUrl": null,
+      "tags": [
+        "evangelism & missions",
+        "church & ministry support",
+        "ministry leaders",
+        "families",
+        "atrisk youth",
+        "crisis support",
+        "single parents"
+      ],
+      "ein": "33-0863910",
+      "createdAt": "2025-09-04T16:38:42.718Z",
+      "updatedAt": "2025-09-04T16:38:42.718Z"
+    },
+    {
+      "id": "cmf5mrrdd0012dm2o6vlj5a8t",
+      "name": "PastorServe",
+      "description": "PastorServe is dedicated to strengthening the Church by supporting pastors, vocational ministry leaders, and their spouses through coaching, soul care, crisis support, and consulting. We aim to help ministry leaders thrive in life and leadership.",
+      "website": "https://www.pastorserve.org",
+      "newsUrl": "https://pastorserve.org/blog/",
+      "tags": [
+        "church & ministry support",
+        "mental health & counseling",
+        "leadership & workplace ministry",
+        "ministry leaders",
+        "mental health",
+        "families",
+        "parents",
+        "adults"
+      ],
+      "ein": "75-3139219",
+      "createdAt": "2025-09-04T16:38:42.770Z",
+      "updatedAt": "2025-09-04T16:38:42.770Z"
+    },
+    {
+      "id": "cmf5mrrce000gdm2o51jzzfqw",
+      "name": "Prison Fellowship",
+      "description": "Prison Fellowship is the Nation’s largest Prison Ministry where our mission is to seek the transformation of prisoners and their reconciliation to God, family, and community through the power and truth of Jesus Christ; and the transformation of believers as they apply biblical thinking to all of life, enabling them to transform their communities through the grace and truth of Jesus Christ.",
+      "website": "https://www.prisonfellowship.org",
+      "newsUrl": "https://www.prisonfellowship.org/resources/newsroom/",
+      "tags": [
+        "justice & advocacy",
+        "community outreach & social impact",
+        "atrisk youth",
+        "low income",
+        "families",
+        "crisis support",
+        "mental health"
+      ],
+      "ein": "62-0988294",
+      "createdAt": "2025-09-04T16:38:42.734Z",
+      "updatedAt": "2025-09-04T16:38:42.734Z"
+    },
+    {
+      "id": "cmf5mrrbw0005dm2ock2pqd91",
+      "name": "Pulse Evangelism",
+      "description": "Pulse Evangelism makes Jesus known through the engines of digital and in-person evangelism, prayer, and partnership. Since its founding, Pulse Evangelism has shared the hope of Jesus to over 330 million people through live events, digital ministry, local revival gatherings, and evangelism training.",
+      "website": "https://www.pulse.org",
+      "newsUrl": "https://www.pulse.org/press/",
+      "tags": [
+        "evangelism & missions",
+        "media, publishing & digital ministry",
+        "community outreach & social impact",
+        "adults",
+        "families",
+        "ministry leaders",
+        "atrisk youth",
+        "single parents"
+      ],
+      "ein": "20-5425332",
+      "createdAt": "2025-09-04T16:38:42.716Z",
+      "updatedAt": "2025-09-04T16:38:42.716Z"
+    },
+    {
+      "id": "cmf5mrrcv000qdm2oa1bj2vnf",
+      "name": "RightNow Media",
+      "description": "RightNow Media serves 18,000 churches and businesses every day in 25 countries. Our streaming media service allows Christians to access over 20,000 biblical videos from 250 of the top Christian publishers, ministries, and communicators in the country.",
+      "website": "https://www.rightnowmedia.org",
+      "newsUrl": "https://www.rightnowmedia.org/blog",
+      "tags": [
+        "media",
+        "christian education",
+        "non-profit",
+        "ministry leaders",
+        "families",
+        "atrisk youth",
+        "crisis support",
+        "low income"
+      ],
+      "ein": "75-2353393",
+      "createdAt": "2025-09-04T16:38:42.751Z",
+      "updatedAt": "2025-09-04T16:38:42.751Z"
+    },
+    {
+      "id": "cmf5mrrbz0007dm2ounuh7q3c",
+      "name": "Safe House Project",
+      "description": "Safe House Project is a national nonprofit organization dedicated to combatting human trafficking. Our mission is to raise the identification rate of survivors beyond one percent through education, provide emergency services to survivors, and ensure that every survivor has access to safe housing and holistic care.",
+      "website": "https://www.safehouseproject.org",
+      "newsUrl": "https://www.safehouseproject.org/press/",
+      "tags": [
+        "compassion & humanitarian aid",
+        "justice & advocacy",
+        "trafficking surv",
+        "domestic violenc",
+        "crisis support",
+        "mental health",
+        "education"
+      ],
+      "ein": "82-3487081",
+      "createdAt": "2025-09-04T16:38:42.719Z",
+      "updatedAt": "2025-09-04T16:38:42.719Z"
+    },
+    {
+      "id": "cmf5mrrct000pdm2o1i3lt6cp",
+      "name": "Salem Media",
+      "description": "Salem Media Group is America’s leading multimedia company specializing in Christian and conservative content, with media properties comprising radio, digital media and book and newsletter publishing. Each day Salem serves a loyal and dedicated audience of listeners, readers and viewers numbering in the millions nationally.",
+      "website": "https://www.salemmedia.com",
+      "newsUrl": "https://investor.salemmedia.com/news-events/press-releases",
+      "tags": [
+        "media, publishing & digital ministry",
+        "ministry leaders",
+        "families",
+        "parents",
+        "atrisk youth",
+        "education"
+      ],
+      "ein": "77-0121400",
+      "createdAt": "2025-09-04T16:38:42.750Z",
+      "updatedAt": "2025-09-04T16:38:42.750Z"
+    },
+    {
+      "id": "cmf5mrrca000edm2oph925h31",
+      "name": "Soul Care",
+      "description": "Soul Care provides resources and support for organizations to enhance the soul health of their teams, focusing on spiritual, mental, and emotional well-being.",
+      "website": "https://www.soulcare.com",
+      "newsUrl": "https://www.soulcare.com/blog",
+      "tags": [
+        "mental health & counseling",
+        "healthcare & well-being",
+        "mental health",
+        "families",
+        "crisis support",
+        "adults",
+        "ministry leaders"
+      ],
+      "ein": null,
+      "createdAt": "2025-09-04T16:38:42.731Z",
+      "updatedAt": "2025-09-04T16:38:42.731Z"
+    },
+    {
+      "id": "cmf5mrrbu0004dm2ob3aaanov",
+      "name": "Spire Network",
+      "description": "A community built for ministry leaders, focusing on encouraging and equipping leaders who inspire a movement of healthy growing churches.",
+      "website": "https://www.spireconnect.network",
+      "newsUrl": null,
+      "tags": [
+        "church & ministry support",
+        "ministry leaders",
+        "families",
+        "adults",
+        "atrisk youth",
+        "parents"
+      ],
+      "ein": "31-1565295",
+      "createdAt": "2025-09-04T16:38:42.714Z",
+      "updatedAt": "2025-09-04T16:38:42.714Z"
+    },
+    {
+      "id": "cmf5mrrcp000mdm2onq4ymty9",
+      "name": "The Chosen",
+      "description": "Come and See is dedicated to introducing the world to Jesus through the production and translation of The Chosen, aiming to reach a billion people with the authentic message of Jesus.",
+      "website": "https://www.comeandseefoundation.org",
+      "newsUrl": null,
+      "tags": [
+        "media",
+        "evangelism & missions",
+        "families",
+        "low income",
+        "atrisk youth",
+        "refugees",
+        "people with disa"
+      ],
+      "ein": "88-3013171",
+      "createdAt": "2025-09-04T16:38:42.745Z",
+      "updatedAt": "2025-09-04T16:38:42.745Z"
+    },
+    {
+      "id": "cmf5mrrd4000wdm2o059err77",
+      "name": "The Pastors Collective",
+      "description": "The Pastors Collective is a non-profit organization dedicated to helping pastors, their partners, and ministry leaders from all denominations learn to be well so they can build well. We provide support through retreats, community, and resources focused on mental health in ministry.",
+      "website": "https://www.pastorscollective.com",
+      "newsUrl": null,
+      "tags": [
+        "mental health & counseling",
+        "church & ministry support",
+        "ministry leaders",
+        "mental health",
+        "crisis support",
+        "families",
+        "adults"
+      ],
+      "ein": "85-4389634",
+      "createdAt": "2025-09-04T16:38:42.761Z",
+      "updatedAt": "2025-09-04T16:38:42.761Z"
+    },
+    {
+      "id": "cmf5mrrcw000rdm2o0qiv09xt",
+      "name": "Transforming the Bay for Christ",
+      "description": "Transforming the Bay with Christ (TBC) supports local leaders in the church, the marketplace, and the nonprofit sector to catalyze a Gospel movement in the Bay Area. We focus on connecting, equipping, and encouraging collaboration among leaders of faith. We believe empowering them will impact the lives of millions of individuals in the San Francisco Bay Area.",
+      "website": "https://www.tbc.city",
+      "newsUrl": "https://www.tbc.city/blogtechnical/tag/Stories",
+      "tags": [
+        "community outreach & social impact",
+        "evangelism & missions",
+        "discipleship & faith formation",
+        "ministry leaders",
+        "families",
+        "low income",
+        "atrisk youth",
+        "education"
+      ],
+      "ein": "46-5215702",
+      "createdAt": "2025-09-04T16:38:42.752Z",
+      "updatedAt": "2025-09-04T16:38:42.752Z"
+    },
+    {
+      "id": "cmf5mrrc9000ddm2o90ayzbes",
+      "name": "UniteUs",
+      "description": "Unite exists to see college students gathered to lift the name of Jesus, providing a welcoming environment for non-believers to hear the Gospel, and for believers to experience freedom and community.",
+      "website": "https://www.uniteusmovement.com",
+      "newsUrl": "https://www.uniteusmovement.com/news",
+      "tags": [
+        "evangelism & missions",
+        "education & training",
+        "community outreach & social impact",
+        "atrisk youth",
+        "families",
+        "ministry leaders",
+        "education",
+        "low income"
+      ],
+      "ein": "93-4529970",
+      "createdAt": "2025-09-04T16:38:42.729Z",
+      "updatedAt": "2025-09-04T16:38:42.729Z"
+    },
+    {
+      "id": "cmf5mrrc5000bdm2o783jf7ix",
+      "name": "Upward Sports",
+      "description": "Upward Sports partners with churches to leverage the power of sports to help churches achieve and increase the impact of their mission. Upward utilizes sports to share the gospel and promote the discovery of Jesus in every community.",
+      "website": "https://www.upward.org",
+      "newsUrl": "https://www.upward.org/community-in-the-news/",
+      "tags": [
+        "community outreach & social impact",
+        "church & ministry support",
+        "atrisk youth",
+        "families",
+        "low income",
+        "refugees",
+        "single parents"
+      ],
+      "ein": "57-1031173",
+      "createdAt": "2025-09-04T16:38:42.726Z",
+      "updatedAt": "2025-09-04T16:38:42.726Z"
+    },
+    {
+      "id": "cmf5mrrcc000fdm2oe2yu6x2g",
+      "name": "Wesleyan Investment Foundation",
+      "description": "Wesleyan Investment Foundation provides loan assistance to churches and church-related entities to help them expand their facilities, purchase land, build, renovate, or refinance current debt. They operate as a nonprofit organization, focusing on faith-based investment opportunities.",
+      "website": "https://www.wifonline.com",
+      "newsUrl": null,
+      "tags": [
+        "financial stewardship & ethical giving",
+        "church & ministry support",
+        "ministry leaders",
+        "families",
+        "low income",
+        "atrisk youth",
+        "single parents"
+      ],
+      "ein": "35-1775757",
+      "createdAt": "2025-09-04T16:38:42.733Z",
+      "updatedAt": "2025-09-04T16:38:42.733Z"
+    },
+    {
+      "id": "cmf5mrrc20009dm2o8ug37jtn",
+      "name": "Winter Jam",
+      "description": "Winter Jam is a Christian music tour featuring various artists and speakers, providing a platform for worship and community engagement.",
+      "website": "https://www.jamtour.com",
+      "newsUrl": null,
+      "tags": [
+        "arts, music & worship",
+        "community outreach & social impact",
+        "atrisk youth",
+        "families",
+        "low income",
+        "single parents",
+        "homeless"
+      ],
+      "ein": "58-1449159",
+      "createdAt": "2025-09-04T16:38:42.722Z",
+      "updatedAt": "2025-09-04T16:38:42.722Z"
+    },
+    {
+      "id": "cmf5mrrd8000zdm2oh3nf9q9l",
+      "name": "Wycliffe Associates",
+      "description": "Wycliffe Associates empowers national Bible translators under the authority of the local church in each community. Together with our donors and prayer partners, we are following God’s call to accelerate Bible translation in the most remote, most antagonistic parts of the world.",
+      "website": "https://www.wycliffeassociates.org",
+      "newsUrl": "https://wycliffeassociates.org/about/key-press-releases/",
+      "tags": [
+        "community outreach & social impact",
+        "church & ministry support",
+        "education",
+        "atrisk youth",
+        "refugees",
+        "fosteradoptive p",
+        "people with disa"
+      ],
+      "ein": "95-2584324",
+      "createdAt": "2025-09-04T16:38:42.765Z",
+      "updatedAt": "2025-09-04T16:38:42.765Z"
+    }
+  ]
+}
