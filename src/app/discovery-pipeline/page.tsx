@@ -198,7 +198,7 @@ export default function DiscoveryPipelinePage() {
     }
   }
   
-  // Start Phase 2: Scraping
+  // Start Phase 2: Batch Extraction
   const startPhase2 = async () => {
     if (!activeSession) return
     
@@ -214,7 +214,7 @@ export default function DiscoveryPipelinePage() {
       
       const data = await response.json()
       if (data.success) {
-        console.log(`✅ Phase 2 complete: ${data.scrapedCount} articles scraped`)
+        console.log(`✅ Phase 2 complete: ${data.scrapedCount} articles extracted via batch processing`)
         // Load scraped content
         loadScrapedContent(activeSession.id)
       } else {
@@ -520,7 +520,7 @@ export default function DiscoveryPipelinePage() {
                   {!phase2Loading && scrapedContent.length === 0 && selectedUrlIds.size > 0 && (
                     <Button onClick={startPhase2}>
                       <Sparkle size={16} />
-                      Start Scraping
+                      Start Batch Extraction
                     </Button>
                   )}
                 </Flex>
@@ -530,9 +530,15 @@ export default function DiscoveryPipelinePage() {
                 <Card style={{ padding: '20px', textAlign: 'center' }}>
                   <Flex direction="column" align="center" gap="2">
                     <Clock size={24} />
-                    <Text>Scraping in progress... This may take several minutes due to rate limiting.</Text>
+                    <Text>Firecrawl Extract batch processing in progress...</Text>
                     <Text size="2" color="gray">
-                      Processed {scrapeProgress.current} of {scrapeProgress.total} URLs
+                      Step 1: Submitting {scrapeProgress.total} URLs to Firecrawl Extract
+                    </Text>
+                    <Text size="2" color="gray">
+                      Step 2: Polling for completion (up to 2 minutes)
+                    </Text>
+                    <Text size="2" color="gray">
+                      Step 3: Processing results with sentiment analysis
                     </Text>
                   </Flex>
                 </Card>

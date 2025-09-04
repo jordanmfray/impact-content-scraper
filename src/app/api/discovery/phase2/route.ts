@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { firecrawlExtractStructured } from '@/lib/firecrawl'
+import { extractArticlesFromUrls, getExtractJobStatus } from '@/lib/firecrawlExtract'
 import { analyzeSentimentScale } from '@/ai-functions/analyzeSentimentScale'
 
-// Rate limiting for Firecrawl (15 requests per minute)
-const FIRECRAWL_RATE_LIMIT_MS = 60000 / 15 // 4 seconds between requests
-
-async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+// No longer needed - batch processing eliminates rate limiting issues!
 
 // Update URL selection for scraping
 export async function PATCH(request: NextRequest) {
@@ -69,7 +64,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// Start scraping selected URLs
+// Start batch extraction of selected URLs using Firecrawl Extract
 export async function POST(request: NextRequest) {
   try {
     const { sessionId } = await request.json()
@@ -118,181 +113,236 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    console.log(`🚀 Starting Phase 2: Scraping ${selectedUrls.length} URLs for ${session.organization.name}`)
+    console.log(`🚀 Starting Phase 2: Batch extracting ${selectedUrls.length} URLs for ${session.organization.name}`)
     
-    let scrapedCount = 0
-    let failedCount = 0
+    // Extract just the URL strings for batch processing
+    const urls = selectedUrls.map(u => u.url)
     
-    // Process URLs with rate limiting
-    for (const discoveredUrl of selectedUrls) {
-      try {
-        console.log(`📄 Scraping ${discoveredUrl.url}...`)
+    // Use Firecrawl Extract for batch processing
+    const extractResult = await extractArticlesFromUrls(urls, session.organization.name)
+    
+    if (!extractResult.success) {
+      console.error(`❌ Batch extraction failed: ${extractResult.error}`)
+      
+      // Update session status to failed
+      await prisma.discoverySession.update({
+        where: { id: sessionId },
+        data: {
+          status: 'completed',
+          updatedAt: new Date()
+        }
+      })
+      
+      return NextResponse.json({
+        success: false,
+        error: `Batch extraction failed: ${extractResult.error}`
+      }, { status: 500 })
+    }
+    
+    // Handle job-based response (async processing)
+    if (extractResult.jobId) {
+      console.log(`⏳ Extract job started: ${extractResult.jobId}`)
+      console.log(`🔄 Polling for job completion...`)
+      
+      // Simple polling mechanism - check job status every 2 seconds for up to 2 minutes
+      const maxAttempts = 60 // 2 minutes
+      const pollInterval = 2000 // 2 seconds
+      
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
         
-        // Update scrape status
-        await prisma.discoveredUrl.update({
-          where: { id: discoveredUrl.id },
-          data: { scrapeStatus: 'scraping' }
-        })
+        console.log(`📊 Checking job status (attempt ${attempt}/${maxAttempts})...`)
+        const jobStatus = await getExtractJobStatus(extractResult.jobId)
         
-        // Scrape with Firecrawl (with fallback)
-        console.log(`🔥 Attempting Firecrawl extraction for ${discoveredUrl.url}`)
-        let scrapeResult = await firecrawlExtractStructured(discoveredUrl.url, session.organization.name)
-        
-        if (!scrapeResult.success || !scrapeResult.title || !scrapeResult.content) {
-          console.log(`❌ Firecrawl failed: ${scrapeResult.error || 'Unknown error'}`)
-          console.log(`🔄 Falling back to simple HTTP extraction...`)
+        if (jobStatus.success && jobStatus.data && jobStatus.data.length > 0) {
+          console.log(`✅ Job completed! Got ${jobStatus.data.length} articles`)
           
-          // Fallback to simple HTTP extraction
-          try {
-            const response = await fetch(discoveredUrl.url, {
-              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ArticleBot/1.0)' }
-            })
-            
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          // Process the completed job results
+          extractResult.data = jobStatus.data
+          break
+        } else if (!jobStatus.success && jobStatus.error?.includes('failed')) {
+          console.error(`❌ Job failed: ${jobStatus.error}`)
+          
+          await prisma.discoverySession.update({
+            where: { id: sessionId },
+            data: {
+              status: 'completed',
+              updatedAt: new Date()
             }
-            
-            const html = await response.text()
-            console.log(`📄 Fetched ${html.length} characters via HTTP`)
-            
-            // Simple extraction from HTML
-            const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-            const ogTitleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i)
-            const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i)
-            
-            const title = ogTitleMatch?.[1] || titleMatch?.[1] || h1Match?.[1] || 'Article'
-            
-            // Extract some content for analysis (just get text between paragraphs)
-            const paragraphs = [...html.matchAll(/<p[^>]*>([^<]+(?:<[^>]+>[^<]*)*?)<\/p>/gi)]
-            const content = paragraphs.slice(0, 5).map(p => p[1].replace(/<[^>]*>/g, '')).join('\n\n')
-            
-            scrapeResult = {
-              success: true,
-              title: title.trim(),
-              content: content || 'Content extracted via fallback method',
-              summary: content.substring(0, 200) + '...',
-              keywords: [],
-              ogImage: null,
-              images: [],
-              data: {
-                title: title.trim(),
-                content: content || 'Content extracted via fallback method',
-                summary: content.substring(0, 200) + '...',
-                keywords: [],
-                body_markdown: content || 'Content extracted via fallback method'
-              },
-              metadata: {}
-            }
-            
-            console.log(`✅ Fallback extraction successful: ${title.substring(0, 60)}...`)
-            
-          } catch (fallbackError) {
-            console.error(`❌ Fallback extraction also failed:`, fallbackError)
-            throw new Error(`Both Firecrawl and fallback extraction failed: ${fallbackError}`)
-          }
+          })
+          
+          return NextResponse.json({
+            success: false,
+            error: `Extract job failed: ${jobStatus.error}`
+          }, { status: 500 })
         }
         
-        console.log(`✅ Scraped: ${scrapeResult.title.substring(0, 60)}...`)
+        // Still processing, continue polling
+        console.log(`⏳ Job still processing... waiting ${pollInterval/1000}s`)
+      }
+      
+      // If we exhausted all attempts and still no data
+      if (!extractResult.data || extractResult.data.length === 0) {
+        console.error(`⏰ Job polling timed out after ${maxAttempts * pollInterval / 1000}s`)
         
-        // Analyze sentiment
-        console.log(`🧠 Analyzing sentiment...`)
+        await prisma.discoverySession.update({
+          where: { id: sessionId },
+          data: {
+            status: 'completed',
+            updatedAt: new Date()
+          }
+        })
+        
+        return NextResponse.json({
+          success: false,
+          error: 'Extract job timed out - took longer than 2 minutes'
+        }, { status: 500 })
+      }
+    }
+    
+    // Handle immediate results
+    if (!extractResult.data || extractResult.data.length === 0) {
+      console.log(`⚠️ No articles extracted from ${urls.length} URLs`)
+      
+      // Update session status
+      await prisma.discoverySession.update({
+        where: { id: sessionId },
+        data: {
+          status: 'analyzing',
+          processedUrls: urls.length,
+          updatedAt: new Date()
+        }
+      })
+      
+      return NextResponse.json({
+        success: true,
+        scrapedCount: 0,
+        failedCount: urls.length,
+        totalProcessed: urls.length,
+        message: 'No articles could be extracted from the provided URLs'
+      })
+    }
+    
+    console.log(`✅ Batch extraction successful: ${extractResult.data.length} articles extracted`)
+    
+    let processedCount = 0
+    let successCount = 0
+    
+    // Process each extracted article
+    for (const article of extractResult.data) {
+      try {
+        // Find the corresponding discovered URL
+        const discoveredUrl = selectedUrls.find(u => u.url === article.url)
+        
+        if (!discoveredUrl) {
+          console.warn(`⚠️ Could not find discovered URL for: ${article.url}`)
+          continue
+        }
+        
+        // Analyze sentiment using our enhanced scale
+        console.log(`🧠 Analyzing sentiment for: ${article.title.substring(0, 50)}...`)
         const sentimentResult = await analyzeSentimentScale(
-          scrapeResult.content, 
+          article.content, 
           session.organization.name,
-          scrapeResult.title
+          article.title
         )
         
         console.log(`📊 Sentiment: ${sentimentResult.sentimentScore} - ${sentimentResult.reasoning.substring(0, 60)}...`)
         
-        // Save scraped content
+        // Save scraped content to database
         await prisma.scrapedContent.create({
           data: {
             discoveredUrlId: discoveredUrl.id,
             discoverySessionId: sessionId,
-            title: scrapeResult.title,
-            summary: scrapeResult.summary,
-            markdownContent: scrapeResult.content,
-            keywords: scrapeResult.keywords || [],
+            title: article.title,
+            summary: article.summary,
+            markdownContent: article.content,
+            keywords: article.keywords || [],
             sentimentScore: sentimentResult.sentimentScore,
             sentimentReasoning: sentimentResult.reasoning
           }
         })
         
-        // Update URL status
+        // Update URL status to scraped
         await prisma.discoveredUrl.update({
           where: { id: discoveredUrl.id },
           data: { scrapeStatus: 'scraped' }
         })
         
-        scrapedCount++
-        
-        // Rate limiting delay
-        if (scrapedCount < selectedUrls.length) {
-          console.log(`⏳ Rate limiting delay...`)
-          await delay(FIRECRAWL_RATE_LIMIT_MS)
-        }
+        successCount++
         
       } catch (error) {
-        console.error(`❌ Failed to scrape ${discoveredUrl.url}:`, error)
+        console.error(`❌ Failed to process article: ${article.title}`, error)
         
-        // Update URL status to failed
-        await prisma.discoveredUrl.update({
-          where: { id: discoveredUrl.id },
-          data: { scrapeStatus: 'failed' }
-        })
-        
-        failedCount++
+        // Find and update the URL status
+        const discoveredUrl = selectedUrls.find(u => u.url === article.url)
+        if (discoveredUrl) {
+          await prisma.discoveredUrl.update({
+            where: { id: discoveredUrl.id },
+            data: { scrapeStatus: 'failed' }
+          }).catch(console.error)
+        }
       }
       
-      // Update session progress
-      await prisma.discoverySession.update({
-        where: { id: sessionId },
-        data: {
-          processedUrls: scrapedCount + failedCount,
-          updatedAt: new Date()
-        }
-      })
+      processedCount++
     }
+    
+    // Mark any unprocessed URLs as failed
+    const failedUrls = selectedUrls.filter(u => 
+      !extractResult.data!.some(article => article.url === u.url)
+    )
+    
+    for (const failedUrl of failedUrls) {
+      await prisma.discoveredUrl.update({
+        where: { id: failedUrl.id },
+        data: { scrapeStatus: 'failed' }
+      }).catch(console.error)
+    }
+    
+    const failedCount = failedUrls.length + (processedCount - successCount)
     
     // Update final session status
     await prisma.discoverySession.update({
       where: { id: sessionId },
       data: {
         status: 'analyzing',
-        processedUrls: scrapedCount + failedCount,
+        processedUrls: selectedUrls.length,
         updatedAt: new Date()
       }
     })
     
-    console.log(`🎯 Phase 2 complete: ${scrapedCount} scraped, ${failedCount} failed`)
+    console.log(`🎯 Phase 2 complete: ${successCount} extracted successfully, ${failedCount} failed`)
     
     return NextResponse.json({
       success: true,
-      scrapedCount,
-      failedCount,
-      totalProcessed: scrapedCount + failedCount
+      scrapedCount: successCount,
+      failedCount: failedCount,
+      totalProcessed: selectedUrls.length,
+      extractedArticles: extractResult.data.length
     })
     
   } catch (error) {
     console.error('Phase 2 POST error:', error)
     
     // Update session status to failed
-    if (request.json) {
+    try {
       const { sessionId } = await request.json()
       if (sessionId) {
         await prisma.discoverySession.update({
           where: { id: sessionId },
           data: { 
-            status: 'completed', // Mark as completed even if failed
+            status: 'completed',
             updatedAt: new Date()
           }
         }).catch(console.error)
       }
+    } catch {
+      // Ignore errors in error handling
     }
     
     return NextResponse.json({
       success: false,
-      error: 'Scraping failed',
+      error: 'Batch extraction failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
