@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const organizationId = searchParams.get('organizationId')
     const sentiment = searchParams.get('sentiment')
+    const search = searchParams.get('search')
 
     const whereClause: any = {
       status: 'published'
@@ -20,6 +21,31 @@ export async function GET(request: NextRequest) {
       whereClause.sentiment = sentiment
     }
 
+    if (search) {
+      whereClause.OR = [
+        {
+          title: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          summary: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          organization: {
+            name: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          }
+        }
+      ]
+    }
+
     const articles = await prisma.article.findMany({
       where: whereClause,
       include: {
@@ -27,7 +53,6 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            logo: true,
           }
         }
       },
@@ -45,25 +70,14 @@ export async function GET(request: NextRequest) {
       take: limit
     })
 
-    // Transform articles for frontend
+    // Transform articles for frontend (minimal fields only for performance)
     const transformedArticles = articles.map((article: any) => ({
       id: article.id,
       title: article.title,
-      summary: article.summary,
-      content: article.content, // Include markdown content for preview
       url: article.url,
-      author: article.author,
-      publishedAt: article.publishedAt,
-      ogImage: article.ogImage,
-      sentiment: article.sentiment,
-      keywords: article.keywords,
-      createdAt: article.createdAt,
-      featured: article.featured,
-      inspirationRating: article.inspirationRating,
       organization: {
         id: article.organization.id,
         name: article.organization.name,
-        logo: article.organization.logo,
       }
     }))
 

@@ -15,7 +15,7 @@ interface ValidationResult {
   isValid: boolean
   reasons: string[]
   organizationSentiment: 'positive' | 'neutral' | 'negative'
-  contentType: 'news' | 'press_release' | 'blog_post' | 'list_view' | 'other'
+  contentType: 'news' | 'blog' | 'press_release' | 'podcast' | 'event' | 'list_view' | 'other'
   organizationRelevance: 'high' | 'medium' | 'low'
   publishDateValid: boolean
 }
@@ -39,12 +39,12 @@ export async function validateArticleContent(input: ArticleValidationInput): Pro
       };
     }
 
-    // Check publish date (simple validation)
-    const publishDateValid = checkPublishDate(input.publishedAt);
+    // Note: We no longer check publish date - all dates are acceptable
+    const publishDateValid = true; // Always true now
 
     const result = await generateObject({
       model: openai('gpt-4o-mini'),
-      system: `You are an expert content analyst for faith-based impact investing. Your job is to validate whether articles should be catalogued based on strict quality and relevance criteria.
+      system: `You are an expert content analyst for faith-based impact investing. Your job is to validate whether articles should be catalogued based on simple, focused criteria.
 
 VALIDATION CRITERIA:
 
@@ -55,8 +55,10 @@ VALIDATION CRITERIA:
    
 2. CONTENT TYPE: What type of content is this?
    - NEWS: Actual news articles about events, developments, impact stories
+   - BLOG: Opinion pieces, thought leadership, personal perspectives, blog posts
    - PRESS_RELEASE: Official announcements or promotional content
-   - BLOG_POST: Opinion pieces, thought leadership, personal perspectives
+   - PODCAST: Audio content, podcast episodes, interview transcriptions
+   - EVENT: Event announcements, conference coverage, webinar information
    - LIST_VIEW: Directory, list of articles, index pages, navigation pages
    - OTHER: Documentation, technical specs, administrative content
 
@@ -65,12 +67,14 @@ VALIDATION CRITERIA:
    - MEDIUM: Organization mentioned substantially but not main focus (10-30%)
    - LOW: Brief mention, passing reference, or tangential connection (<10%)
 
-REJECTION CRITERIA:
-- Negative sentiment toward the organization
-- Published before January 1, 2024
-- List views or navigation pages
-- Low organization relevance
-- Non-news content types (unless high-quality impact stories)`,
+REJECTION CRITERIA (VERY LIMITED):
+- Negative sentiment toward the organization (criticism, scandals, unfavorable coverage)
+- Low organization relevance (content is not actually about the organization)
+
+ACCEPT EVERYTHING ELSE:
+- All content types (news, blog, press releases, podcasts, events, etc.)
+- All publish dates (old articles are valuable for historical context)
+- All organization relevance levels except "low" (medium and high are both acceptable)`,
       prompt: `Analyze this article for the organization "${input.organizationName}":
 
 URL: ${input.url}
@@ -84,53 +88,34 @@ ${input.content.substring(0, 4000)}
 Validate this article:`,
       schema: z.object({
         organizationSentiment: z.enum(['positive', 'neutral', 'negative']),
-        contentType: z.enum(['news', 'press_release', 'blog_post', 'list_view', 'other']),
+        contentType: z.enum(['news', 'blog', 'press_release', 'podcast', 'event', 'list_view', 'other']),
         organizationRelevance: z.enum(['high', 'medium', 'low']),
         reasoning: z.string().describe('Detailed explanation of the validation decision'),
         specificIssues: z.array(z.string()).describe('Specific problems found, if any')
       }),
     });
 
-    // Determine if article is valid based on criteria
+    // Determine if article is valid based on simplified criteria
     const validationReasons: string[] = [];
     let isValid = true;
 
-    // Check organization sentiment
+    // ONLY reject for these two specific reasons:
+
+    // 1. Check organization sentiment - reject only negative sentiment
     if (result.object.organizationSentiment === 'negative') {
       isValid = false;
       validationReasons.push('Article casts negative light on the organization');
     }
 
-    // Check publish date
-    if (!publishDateValid) {
-      isValid = false;
-      validationReasons.push('Article published before January 1, 2024');
-    }
-
-    // Check for list views
-    if (result.object.contentType === 'list_view') {
-      isValid = false;
-      validationReasons.push('Article is a list view or navigation page');
-    }
-
-    // Check organization relevance
+    // 2. Check organization relevance - reject only if completely irrelevant (low)
     if (result.object.organizationRelevance === 'low') {
       isValid = false;
-      validationReasons.push('Article has insufficient content about the organization');
+      validationReasons.push('Article content is not relevant to the organization');
     }
 
-    // Check content type - prefer news but allow high-relevance content
-    if (result.object.contentType !== 'news' && 
-        result.object.contentType !== 'press_release' && 
-        result.object.organizationRelevance !== 'high') {
-      isValid = false;
-      validationReasons.push('Article is not news content and lacks sufficient organizational focus');
-    }
-
-    // Add specific issues from AI analysis
-    if (result.object.specificIssues.length > 0) {
-      validationReasons.push(...result.object.specificIssues);
-    }
+    // REMOVED: Date checks (accept all dates, including old articles)
+    // REMOVED: Content type restrictions (accept all content types)
+    // REMOVED: List view restrictions (accept all page types)
 
     // If valid, add success reason
     if (isValid) {
@@ -149,12 +134,12 @@ Validate this article:`,
   } catch (error) {
     console.error('Content validation failed:', error);
     return {
-      isValid: false,
-      reasons: ['Validation analysis failed - defaulting to rejection for safety'],
+      isValid: true, // Default to accepting articles when validation fails
+      reasons: ['Validation analysis failed - defaulting to acceptance'],
       organizationSentiment: 'neutral',
       contentType: 'other',
-      organizationRelevance: 'low',
-      publishDateValid: false
+      organizationRelevance: 'medium', // Default to medium relevance
+      publishDateValid: true
     };
   }
 }

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Box, Heading, Text, Flex, Button, Card, Badge, Spinner, Table, IconButton, Dialog, TextField, TextArea } from '@radix-ui/themes'
-import { CheckCircle, XCircle, Eye, PencilSimple, Trash, CaretLeft, CaretRight, ArrowCounterClockwise, X } from "@phosphor-icons/react/dist/ssr"
+import { Box, Heading, Text, Flex, Button, Card, Badge, Spinner, Table, IconButton, Dialog, TextField, TextArea, Select, Checkbox } from '@radix-ui/themes'
+import { CheckCircle, XCircle, Eye, PencilSimple, Trash, CaretLeft, CaretRight, ArrowCounterClockwise, X, Check, Prohibit } from "@phosphor-icons/react/dist/ssr"
 
 interface Article {
   id: string
@@ -28,8 +28,12 @@ interface Article {
   organization: {
     id: string
     name: string
-    logo?: string | null
   }
+}
+
+interface Organization {
+  id: string
+  name: string
 }
 
 interface PaginationInfo {
@@ -46,8 +50,17 @@ export default function AdminArticlesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [organizationFilter, setOrganizationFilter] = useState<string>('all')
+  const [organizations, setOrganizations] = useState<Organization[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  
+  // Multi-select state
+  const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set())
+  const [isBulkActing, setIsBulkActing] = useState(false)
+  
+  // Pagination state
+  const [pageSize, setPageSize] = useState<number>(100)
   
   // Edit modal state
   const [editingArticle, setEditingArticle] = useState<Article | null>(null)
@@ -58,18 +71,40 @@ export default function AdminArticlesPage() {
     ogImage: ''
   })
 
+  // Load organizations on component mount
+  useEffect(() => {
+    fetchOrganizations()
+  }, [])
+
   useEffect(() => {
     fetchArticles()
-  }, [statusFilter, pagination?.page])
+  }, [statusFilter, organizationFilter, pagination?.page, pageSize])
+
+  const fetchOrganizations = async () => {
+    try {
+      const response = await fetch('/api/organizations')
+      const data = await response.json()
+      
+      if (data.success) {
+        setOrganizations(data.organizations)
+      }
+    } catch (error) {
+      console.error('Failed to fetch organizations:', error)
+    }
+  }
 
   const fetchArticles = async (page: number = 1) => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '50',
+        limit: pageSize.toString(),
         status: statusFilter
       })
+      
+      if (organizationFilter && organizationFilter !== 'all') {
+        params.set('organizationId', organizationFilter)
+      }
       
       const response = await fetch(`/api/admin/articles?${params}`)
       const data = await response.json()
@@ -198,10 +233,7 @@ export default function AdminArticlesPage() {
   }
 
   const handlePublish = async (article: Article) => {
-    const confirmed = confirm(`Are you sure you want to publish "${article.title}"? This will make it visible on the homepage.`)
-    if (confirmed) {
-      await updateArticle(article.id, { status: 'published' })
-    }
+    await updateArticle(article.id, { status: 'published' })
   }
 
   const handleDelete = async (article: Article) => {
@@ -261,15 +293,134 @@ export default function AdminArticlesPage() {
     setEditForm({ title: '', summary: '', content: '', ogImage: '' })
   }
 
+  // Multi-select handlers
+  const handleSelectArticle = (articleId: string, checked: boolean) => {
+    const newSelected = new Set(selectedArticles)
+    if (checked) {
+      newSelected.add(articleId)
+    } else {
+      newSelected.delete(articleId)
+    }
+    setSelectedArticles(newSelected)
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(articles.map(article => article.id))
+      setSelectedArticles(allIds)
+    } else {
+      setSelectedArticles(new Set())
+    }
+  }
+
+  const handleBulkPublish = async () => {
+    if (selectedArticles.size === 0) return
+    
+    const confirmed = confirm(`Are you sure you want to publish ${selectedArticles.size} selected articles?`)
+    if (!confirmed) return
+
+    setIsBulkActing(true)
+    const errors: string[] = []
+    
+    try {
+      for (const articleId of selectedArticles) {
+        try {
+          const success = await updateArticle(articleId, { status: 'published' })
+          if (!success) {
+            const article = articles.find(a => a.id === articleId)
+            errors.push(article?.title || articleId)
+          }
+        } catch (error) {
+          const article = articles.find(a => a.id === articleId)
+          errors.push(article?.title || articleId)
+        }
+      }
+      
+      if (errors.length > 0) {
+        alert(`Failed to publish ${errors.length} articles:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}`)
+      } else {
+        alert(`Successfully published ${selectedArticles.size} articles!`)
+      }
+      
+      // Clear selection
+      setSelectedArticles(new Set())
+      
+    } catch (error) {
+      alert('Bulk publish operation failed')
+    } finally {
+      setIsBulkActing(false)
+    }
+  }
+
+  const handleBulkReject = async () => {
+    if (selectedArticles.size === 0) return
+    
+    const confirmed = confirm(`Are you sure you want to reject ${selectedArticles.size} selected articles?`)
+    if (!confirmed) return
+
+    setIsBulkActing(true)
+    const errors: string[] = []
+    
+    try {
+      for (const articleId of selectedArticles) {
+        try {
+          const success = await updateArticle(articleId, { 
+            status: 'rejected',
+            validationReasons: ['Bulk rejected by admin']
+          })
+          if (!success) {
+            const article = articles.find(a => a.id === articleId)
+            errors.push(article?.title || articleId)
+          }
+        } catch (error) {
+          const article = articles.find(a => a.id === articleId)
+          errors.push(article?.title || articleId)
+        }
+      }
+      
+      if (errors.length > 0) {
+        alert(`Failed to reject ${errors.length} articles:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}`)
+      } else {
+        alert(`Successfully rejected ${selectedArticles.size} articles!`)
+      }
+      
+      // Clear selection
+      setSelectedArticles(new Set())
+      
+    } catch (error) {
+      alert('Bulk reject operation failed')
+    } finally {
+      setIsBulkActing(false)
+    }
+  }
+
+  const clearSelection = () => {
+    setSelectedArticles(new Set())
+  }
+
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value)
     setPagination(prev => prev ? { ...prev, page: 1 } : null)
+    setSelectedArticles(new Set()) // Clear selection when filter changes
+  }
+
+  const handleOrganizationFilterChange = (value: string) => {
+    setOrganizationFilter(value)
+    setPagination(prev => prev ? { ...prev, page: 1 } : null)
+    setSelectedArticles(new Set()) // Clear selection when filter changes
   }
 
   const handlePageChange = (newPage: number) => {
     if (pagination && newPage >= 1 && newPage <= pagination.totalPages) {
       fetchArticles(newPage)
     }
+  }
+
+  const handlePageSizeChange = (newPageSize: string) => {
+    const size = parseInt(newPageSize)
+    setPageSize(size)
+    setPagination(prev => prev ? { ...prev, page: 1 } : null) // Reset to page 1
+    setSelectedArticles(new Set()) // Clear selection when page size changes
   }
 
   const getInspirationPill = (rating: string | null) => {
@@ -376,39 +527,103 @@ export default function AdminArticlesPage() {
 
       {/* Filters */}
       <Card>
-        <Flex gap="3" align="center">
-          <Text weight="medium">Filter by status:</Text>
-          <Button 
-            variant={statusFilter === 'all' ? 'solid' : 'soft'} 
-            onClick={() => handleStatusFilterChange('all')}
-            size="2"
-          >
-            All
-          </Button>
-          <Button 
-            variant={statusFilter === 'draft' ? 'solid' : 'soft'} 
-            onClick={() => handleStatusFilterChange('draft')}
-            size="2"
-          >
-            Draft
-          </Button>
-          <Button 
-            variant={statusFilter === 'published' ? 'solid' : 'soft'} 
-            onClick={() => handleStatusFilterChange('published')}
-            size="2"
-          >
-            Published
-          </Button>
-          <Button 
-            variant={statusFilter === 'rejected' ? 'solid' : 'soft'} 
-            onClick={() => handleStatusFilterChange('rejected')}
-            size="2"
-            color="red"
-          >
-            Rejected
-          </Button>
+        <Flex direction="column" gap="4">
+          {/* Status Filter */}
+          <Flex gap="3" align="center" wrap="wrap">
+            <Text weight="medium">Filter by status:</Text>
+            <Button 
+              variant={statusFilter === 'all' ? 'solid' : 'soft'} 
+              onClick={() => handleStatusFilterChange('all')}
+              size="2"
+            >
+              All
+            </Button>
+            <Button 
+              variant={statusFilter === 'draft' ? 'solid' : 'soft'} 
+              onClick={() => handleStatusFilterChange('draft')}
+              size="2"
+            >
+              Draft
+            </Button>
+            <Button 
+              variant={statusFilter === 'published' ? 'solid' : 'soft'} 
+              onClick={() => handleStatusFilterChange('published')}
+              size="2"
+            >
+              Published
+            </Button>
+            <Button 
+              variant={statusFilter === 'rejected' ? 'solid' : 'soft'} 
+              onClick={() => handleStatusFilterChange('rejected')}
+              size="2"
+              color="red"
+            >
+              Rejected
+            </Button>
+          </Flex>
+          
+          {/* Organization Filter */}
+          <Flex gap="3" align="center">
+            <Text weight="medium">Filter by organization:</Text>
+            <Select.Root value={organizationFilter} onValueChange={handleOrganizationFilterChange}>
+              <Select.Trigger style={{ width: '300px' }} />
+              <Select.Content>
+                <Select.Item value="all">All Organizations</Select.Item>
+                {organizations.map((org) => (
+                  <Select.Item key={org.id} value={org.id}>
+                    {org.name}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+          </Flex>
         </Flex>
       </Card>
+
+      {/* Bulk Actions */}
+      {selectedArticles.size > 0 && (
+        <Card>
+          <Flex align="center" justify="between">
+            <Flex align="center" gap="3">
+              <Text weight="medium" color="blue">
+                {selectedArticles.size} article{selectedArticles.size !== 1 ? 's' : ''} selected
+              </Text>
+              <Button 
+                size="2" 
+                variant="soft" 
+                color="gray" 
+                onClick={clearSelection}
+                disabled={isBulkActing}
+              >
+                Clear Selection
+              </Button>
+            </Flex>
+            <Flex gap="2">
+              <Button 
+                size="2" 
+                color="green" 
+                onClick={handleBulkPublish}
+                disabled={isBulkActing || isUpdating}
+                loading={isBulkActing}
+              >
+                <Check size={16} />
+                Publish Selected
+              </Button>
+              <Button 
+                size="2" 
+                color="red" 
+                variant="soft"
+                onClick={handleBulkReject}
+                disabled={isBulkActing || isUpdating}
+                loading={isBulkActing}
+              >
+                <Prohibit size={16} />
+                Reject Selected
+              </Button>
+            </Flex>
+          </Flex>
+        </Card>
+      )}
 
       {/* Articles Table */}
       {articles.length === 0 ? (
@@ -422,6 +637,13 @@ export default function AdminArticlesPage() {
           <Table.Root>
             <Table.Header>
               <Table.Row>
+                <Table.ColumnHeaderCell>
+                  <Checkbox
+                    checked={selectedArticles.size === articles.length && articles.length > 0}
+                    onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                    disabled={isUpdating || isBulkActing}
+                  />
+                </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>State</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Published Date</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Date Scraped</Table.ColumnHeaderCell>
@@ -438,6 +660,13 @@ export default function AdminArticlesPage() {
             <Table.Body>
               {articles.map((article) => (
                 <Table.Row key={article.id}>
+                  <Table.Cell>
+                    <Checkbox
+                      checked={selectedArticles.has(article.id)}
+                      onCheckedChange={(checked) => handleSelectArticle(article.id, checked === true)}
+                      disabled={isUpdating || isBulkActing}
+                    />
+                  </Table.Cell>
                   <Table.Cell>
                     {getStatusBadge(article.status)}
                   </Table.Cell>
@@ -590,32 +819,77 @@ export default function AdminArticlesPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <Flex justify="center" align="center" gap="4">
-          <Button
-            variant="soft"
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={!pagination.hasPrev || loading}
-          >
-            <CaretLeft size={16} />
-            Previous
-          </Button>
-          
-          <Flex align="center" gap="2">
-            <Text size="2" color="gray">
-              Page {pagination.page} of {pagination.totalPages}
-            </Text>
+      {pagination && (
+        <Card>
+          <Flex justify="between" align="center" wrap="wrap" gap="4">
+            {/* Left side - Results info and page size selector */}
+            <Flex align="center" gap="4" wrap="wrap">
+              <Text size="2" color="gray">
+                Showing {((pagination.page - 1) * pageSize) + 1}-{Math.min(pagination.page * pageSize, pagination.totalCount)} of {pagination.totalCount.toLocaleString()} articles
+              </Text>
+              <Flex align="center" gap="2">
+                <Text size="2" color="gray">Show:</Text>
+                <Select.Root value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <Select.Trigger style={{ width: '80px' }} />
+                  <Select.Content>
+                    <Select.Item value="50">50</Select.Item>
+                    <Select.Item value="100">100</Select.Item>
+                    <Select.Item value="200">200</Select.Item>
+                    <Select.Item value="500">500</Select.Item>
+                  </Select.Content>
+                </Select.Root>
+              </Flex>
+            </Flex>
+            
+            {/* Right side - Pagination controls */}
+            {pagination.totalPages > 1 && (
+              <Flex align="center" gap="2">
+                <Button
+                  size="2"
+                  variant="soft"
+                  onClick={() => handlePageChange(1)}
+                  disabled={pagination.page === 1 || loading}
+                >
+                  First
+                </Button>
+                <Button
+                  size="2"
+                  variant="soft"
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={!pagination.hasPrev || loading}
+                >
+                  <CaretLeft size={16} />
+                  Previous
+                </Button>
+                
+                <Flex align="center" gap="1">
+                  <Text size="2" color="gray">Page</Text>
+                  <Text size="2" weight="bold">{pagination.page}</Text>
+                  <Text size="2" color="gray">of</Text>
+                  <Text size="2" weight="bold">{pagination.totalPages}</Text>
+                </Flex>
+                
+                <Button
+                  size="2"
+                  variant="soft"
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={!pagination.hasNext || loading}
+                >
+                  Next
+                  <CaretRight size={16} />
+                </Button>
+                <Button
+                  size="2"
+                  variant="soft"
+                  onClick={() => handlePageChange(pagination.totalPages)}
+                  disabled={pagination.page === pagination.totalPages || loading}
+                >
+                  Last
+                </Button>
+              </Flex>
+            )}
           </Flex>
-          
-          <Button
-            variant="soft"
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={!pagination.hasNext || loading}
-          >
-            Next
-            <CaretRight size={16} />
-          </Button>
-        </Flex>
+        </Card>
       )}
 
       {/* Edit Article Dialog */}

@@ -10,22 +10,21 @@ import { OrganizationInfo, DateDisplay } from './ArticleCards'
 interface Article {
   id: string
   title: string
-  summary: string | null
+  url: string
+  summary?: string | null
   content?: string | null
   author?: string | null
   publishedAt?: Date | null
-  url: string
+  ogImage?: string | null
+  sentiment?: string | null
+  keywords?: string[]
+  createdAt?: Date
+  featured?: boolean
+  inspirationRating?: string | null
   organization: {
     id: string
     name: string
-    logo?: string | null
   }
-  sentiment: string | null
-  keywords: string[]
-  createdAt: Date
-  featured: boolean
-  inspirationRating?: string | null
-  ogImage?: string | null
 }
 
 interface ArticlePreviewDrawerProps {
@@ -191,7 +190,7 @@ export function ArticlePreviewDrawer({ article, open, onClose }: ArticlePreviewD
               )}
 
               {/* Keywords */}
-              {article.keywords.length > 0 && (
+              {article.keywords && article.keywords.length > 0 && (
                 <Flex gap="2" wrap="wrap">
                   {article.keywords.slice(0, 8).map((keyword, index) => (
                     <Text 

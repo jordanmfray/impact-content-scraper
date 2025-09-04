@@ -226,7 +226,7 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       include: {
         organization: { 
-          select: { name: true, logo: true } 
+          select: { name: true } 
         }
       },
       orderBy: { discoveredAt: 'asc' }
@@ -245,7 +245,6 @@ export async function GET(request: NextRequest) {
         id: batch.id,
         organizationId: batch.organizationId,
         organizationName: batch.organization.name,
-        organizationLogo: batch.organization.logo,
         timeframe: batch.timeframe,
         totalUrls: batch.totalUrls,
         discoveredAt: batch.discoveredAt,

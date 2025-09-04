@@ -7,13 +7,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const status = searchParams.get('status') // 'all', 'draft', 'published', 'failed', 'processing'
+    const organizationId = searchParams.get('organizationId') // organization filter
     
     const skip = (page - 1) * limit
 
-    // Build where clause based on status filter
+    // Build where clause based on filters
     const whereClause: any = {}
     if (status && status !== 'all') {
       whereClause.status = status
+    }
+    if (organizationId && organizationId !== 'all') {
+      whereClause.organizationId = organizationId
     }
 
     // Get total count for pagination
@@ -29,7 +33,6 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            logo: true,
           }
         }
       },
@@ -73,7 +76,6 @@ export async function GET(request: NextRequest) {
       organization: {
         id: article.organization.id,
         name: article.organization.name,
-        logo: article.organization.logo,
       }
     }))
 
@@ -127,7 +129,6 @@ export async function PATCH(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            logo: true,
           }
         }
       }
@@ -159,7 +160,6 @@ export async function PATCH(request: NextRequest) {
         organization: {
           id: updatedArticle.organization.id,
           name: updatedArticle.organization.name,
-          logo: updatedArticle.organization.logo,
         }
       }
     })

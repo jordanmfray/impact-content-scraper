@@ -4,27 +4,26 @@ import { Card, Box, Text, Flex, Badge, Avatar, Button } from '@radix-ui/themes'
 import { CalendarBlank, ArrowUpRight, User } from '@phosphor-icons/react/dist/ssr'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { ArticlePreviewDrawer } from './ArticlePreviewDrawer'
 
 interface Article {
   id: string
   title: string
-  summary: string | null
-  content?: string | null
   url: string
+  summary?: string | null
+  content?: string | null
   author?: string | null
   publishedAt?: Date | null
   ogImage?: string | null
-  sentiment: string | null
-  keywords: string[]
-  createdAt: Date
-  featured: boolean
+  sentiment?: string | null
+  keywords?: string[]
+  createdAt?: Date
+  featured?: boolean
   inspirationRating?: string | null
   organization: {
     id: string
     name: string
-    logo?: string | null
   }
 }
 
@@ -389,7 +388,7 @@ export function RowCard({ article }: ArticleCardProps) {
 }
 
 // Grid Card - Matches the green card design from user image
-export function GridCard({ article, variant = 'blue' }: ArticleCardProps & { variant?: 'blue' | 'green' | 'yellow' }) {
+const GridCardComponent = function GridCard({ article, variant = 'blue' }: ArticleCardProps & { variant?: 'blue' | 'green' | 'yellow' }) {
   const [previewOpen, setPreviewOpen] = useState(false)
 
   const handleCardClick = () => {
@@ -434,13 +433,18 @@ export function GridCard({ article, variant = 'blue' }: ArticleCardProps & { var
       }}
       onClick={handleCardClick}
     >
-      {/* Organization Info at top */}
+      {/* Organization Name at top */}
       <Box mb="3">
-        <OrganizationInfo 
-          organization={article.organization} 
-          variant="small"
-          colorScheme={variant}
-        />
+        <Text 
+          size="2" 
+          weight="medium" 
+          style={{ 
+            color: fontColors[variant],
+            fontSize: '14px'
+          }}
+        >
+          {article.organization.name}
+        </Text>
       </Box>
 
       {/* Flexible space that absorbs height differences */}
@@ -465,16 +469,6 @@ export function GridCard({ article, variant = 'blue' }: ArticleCardProps & { var
         {article.title}
       </Text>
 
-      {/* Date */}
-      <Box mb="3">
-        <DateDisplay 
-          publishedAt={article.publishedAt}
-          createdAt={article.createdAt}
-          size="small"
-          color="gray"
-        />
-      </Box>
-
       {/* Article source at very bottom */}
       <Text 
         size="2"
@@ -496,3 +490,6 @@ export function GridCard({ article, variant = 'blue' }: ArticleCardProps & { var
     </>
   )
 }
+
+// Export memoized version for performance
+export const GridCard = memo(GridCardComponent)

@@ -7,7 +7,6 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        logo: true,
         newsUrl: true,
       },
       orderBy: {

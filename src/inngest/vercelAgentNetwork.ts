@@ -36,7 +36,7 @@ interface ArticlePipelineState {
   isValidContent: boolean;
   validationReasons: string[];
   organizationSentiment?: 'positive' | 'neutral' | 'negative';
-  contentType?: 'news' | 'press_release' | 'blog_post' | 'list_view' | 'other';
+  contentType?: 'news' | 'blog' | 'press_release' | 'podcast' | 'event' | 'list_view' | 'other';
   organizationRelevance?: 'high' | 'medium' | 'low';
   
   // Step 5: Database Save
@@ -479,6 +479,15 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
     }
 
     // Create new article as draft for review (simplified architecture - no DiscoveryResult needed)
+    const images = state.images || [];
+    
+    // Automatically set ogImage to the first image if not already set
+    let ogImage = state.ogImage;
+    if (!ogImage && images.length > 0) {
+      ogImage = images[0];
+      console.log(`🎨 Auto-setting banner image: ${ogImage.substring(0, 80)}${ogImage.length > 80 ? '...' : ''}`);
+    }
+    
     const articleData: any = {
       organizationId: state.organizationId,
       url: state.url,
@@ -487,8 +496,8 @@ Published: ${new Date().toLocaleDateString()} | Source: ${url}`;
       content: state.scrapedContent,
       author: state.author,
       publishedAt: parsedPublishedAt,
-      ogImage: state.ogImage,
-      images: state.images || [],
+      ogImage: ogImage,
+      images: images,
       sentiment: state.sentiment,
       keywords: state.keywords,
       inspirationRating: state.inspirationRating || 'low',

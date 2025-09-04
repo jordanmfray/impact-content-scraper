@@ -12,7 +12,6 @@ import { MagnifyingGlass, CaretDown, Link as LinkIcon, Download, Play } from "@p
 interface Organization {
   id: string
   name: string
-  logo?: string | null
   newsUrl?: string | null
 }
 
