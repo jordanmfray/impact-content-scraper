@@ -60,7 +60,7 @@ export interface FirecrawlExtractResult {
   success: boolean
   data?: ExtractedArticle[]
   error?: string
-  jobId?: string
+  jobs?: { url: string, jobId: string }[]
 }
 
 /**
@@ -75,7 +75,8 @@ export async function extractArticlesFromUrls(urls: string[], organizationName?:
   }
 
   console.log(`🔥 Using Firecrawl Extract to process ${urls.length} URLs`)
-  console.log('📄 URLs:', urls.slice(0, 3).join(', '), urls.length > 3 ? `... and ${urls.length - 3} more` : '')
+  console.log('📄 All URLs being sent:', urls)
+  console.log('🔧 Schema being used:', JSON.stringify(ArticleExtractionSchema, null, 2))
 
   try {
     const response = await fetch(`${FIRECRAWL_BASE}/extract`, {
@@ -105,7 +106,7 @@ export async function extractArticlesFromUrls(urls: string[], organizationName?:
     }
 
     const result = await response.json()
-    console.log('📊 Firecrawl Extract response:', result)
+    console.log('📊 Firecrawl Extract response:', JSON.stringify(result, null, 2))
     
     // Check if we got a job ID (for async processing) - Firecrawl uses 'id' field
     if (result.id && !result.data) {
@@ -124,13 +125,23 @@ export async function extractArticlesFromUrls(urls: string[], organizationName?:
       // Normalize the response - could be single object or array
       let articles = Array.isArray(result.data) ? result.data : [result.data]
       
-      // Add source URLs to each article (map by index)
-      articles = articles.map((article: any, index: number) => ({
-        ...article,
-        url: urls[index] || urls[0], // Fallback to first URL if index doesn't match
-        keywords: article.keywords || [],
-        organization_mentions: article.organization_mentions || []
-      }))
+      // Add source URLs to each article (1:1 mapping only)
+      articles = articles
+        .map((article: any, index: number) => {
+          // Only map if we have a corresponding URL at this index
+          if (index < urls.length) {
+            return {
+              ...article,
+              url: urls[index],
+              keywords: article.keywords || [],
+              organization_mentions: article.organization_mentions || []
+            }
+          }
+          return null
+        })
+        .filter(Boolean) // Remove null entries
+        
+      console.log(`🔗 Immediate extraction: mapped ${articles.length} articles to URLs`)
 
       return {
         success: true,
@@ -192,11 +203,13 @@ export async function getExtractJobStatus(jobId: string): Promise<FirecrawlExtra
     }
 
     const result = await response.json()
+    console.log(`📊 Job status response:`, JSON.stringify(result, null, 2))
     
     if (result.status === 'completed' && result.success && result.data) {
       console.log(`✅ Extract job ${jobId} completed: ${Array.isArray(result.data) ? result.data.length : 1} articles`)
       
       let articles = Array.isArray(result.data) ? result.data : [result.data]
+      console.log(`📄 Articles data:`, articles.map((a: any) => ({ title: a.title, hasContent: !!a.content, url: a.url })))
       
       return {
         success: true,

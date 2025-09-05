@@ -15,6 +15,15 @@ interface Article {
   }
 }
 
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 interface Organization {
   id: string
   name: string
@@ -29,14 +38,19 @@ export default function Home() {
   // Filter state
   const [organizationFilter, setOrganizationFilter] = useState<string>('all')
   const [isFiltering, setIsFiltering] = useState(false)
+  
+  // Pagination state
+  const [pagination, setPagination] = useState<Pagination | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Fetch articles with filters
-  const fetchArticles = useCallback(async () => {
+  const fetchArticles = useCallback(async (page: number = currentPage) => {
     try {
       console.time('🔄 Filter articles')
       setIsFiltering(true)
       const params = new URLSearchParams({
-        limit: '50' // Reduced from 100 for better performance
+        page: page.toString(),
+        limit: '20' // Better pagination with smaller pages
       })
       
       if (organizationFilter && organizationFilter !== 'all') {
@@ -51,9 +65,11 @@ export default function Home() {
       if (data.success) {
         console.time('⚡ Update state')
         setArticles(data.articles)
+        setPagination(data.pagination)
+        setCurrentPage(page)
         setError(null)
         console.timeEnd('⚡ Update state')
-        console.log(`✅ Loaded ${data.articles.length} articles`)
+        console.log(`✅ Loaded ${data.articles.length} articles (page ${page}/${data.pagination?.totalPages})`)
       } else {
         setError(data.error || 'Failed to fetch articles')
       }
@@ -64,7 +80,7 @@ export default function Home() {
       setIsFiltering(false)
       console.timeEnd('🔄 Filter articles')
     }
-  }, [organizationFilter])
+  }, [organizationFilter, currentPage])
 
   // Fetch organizations for filter dropdown
   const fetchOrganizations = useCallback(async () => {
@@ -83,18 +99,39 @@ export default function Home() {
   // Filter handlers
   const handleOrganizationChange = useCallback((value: string) => {
     setOrganizationFilter(value)
+    setCurrentPage(1) // Reset to first page when filter changes
   }, [])
+
+  // Pagination handlers
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage)
+    fetchArticles(newPage)
+  }, [fetchArticles])
+
+  const handlePrevPage = useCallback(() => {
+    if (pagination?.hasPrevPage) {
+      handlePageChange(currentPage - 1)
+    }
+  }, [pagination?.hasPrevPage, currentPage, handlePageChange])
+
+  const handleNextPage = useCallback(() => {
+    if (pagination?.hasNextPage) {
+      handlePageChange(currentPage + 1)
+    }
+  }, [pagination?.hasNextPage, currentPage, handlePageChange])
 
   const fetchInitialArticles = useCallback(async () => {
     try {
       console.time('🚀 Initial load')
       setLoading(true)
-      const response = await fetch('/api/articles?limit=50') // Reduced for performance
+      const response = await fetch('/api/articles?page=1&limit=20')
       const data = await response.json()
 
       if (data.success) {
         setArticles(data.articles)
-        console.log(`🏁 Initial load: ${data.articles.length} articles`)
+        setPagination(data.pagination)
+        setCurrentPage(1)
+        console.log(`🏁 Initial load: ${data.articles.length} articles (page 1/${data.pagination?.totalPages})`)
       } else {
         setError(data.error || 'Failed to fetch articles')
       }
@@ -112,14 +149,24 @@ export default function Home() {
     fetchOrganizations()
   }, [fetchInitialArticles, fetchOrganizations])
 
-  // Trigger search when organization filter changes
+  // Trigger search when filters change (but not on initial load)
   useEffect(() => {
     if (organizationFilter !== 'all') {
-      fetchArticles()
-    } else {
+      fetchArticles(1) // Always start from page 1 when filter changes
+    } else if (currentPage === 1) {
       fetchInitialArticles()
+    } else {
+      fetchArticles(currentPage)
     }
-  }, [organizationFilter, fetchArticles, fetchInitialArticles])
+  }, [organizationFilter]) // Remove fetchArticles from deps to prevent loops
+
+  // Handle page changes
+  useEffect(() => {
+    // Only fetch if not initial load (currentPage starts at 1)
+    if (currentPage > 1 || (currentPage === 1 && organizationFilter === 'all' && articles.length > 0)) {
+      fetchArticles(currentPage)
+    }
+  }, [currentPage]) // Simplified deps
 
   if (loading) {
     return (
@@ -299,17 +346,60 @@ export default function Home() {
           </Card>
         )}
 
+        {/* Pagination Controls */}
+        {pagination && pagination.totalPages > 1 && (
+          <Flex justify="center" align="center" gap="4" mt="6">
+            <Button
+              variant="soft"
+              disabled={!pagination.hasPrevPage || isFiltering}
+              onClick={handlePrevPage}
+            >
+              Previous
+            </Button>
+            
+            <Flex align="center" gap="2">
+              <Text size="2" color="gray">
+                Page
+              </Text>
+              <Text size="2" weight="bold">
+                {currentPage}
+              </Text>
+              <Text size="2" color="gray">
+                of {pagination.totalPages}
+              </Text>
+            </Flex>
+            
+            <Button
+              variant="soft" 
+              disabled={!pagination.hasNextPage || isFiltering}
+              onClick={handleNextPage}
+            >
+              Next
+            </Button>
+          </Flex>
+        )}
+
         {/* Stats Footer */}
         <Flex justify="center" mt="6">
           <Text size="2" color="gray">
-            {organizationFilter !== 'all' ? (
-              <>
-                Found {articles.length} article{articles.length === 1 ? '' : 's'} from {organizations.find(org => org.id === organizationFilter)?.name || 'selected organization'}
-              </>
+            {pagination ? (
+              organizationFilter !== 'all' ? (
+                <>
+                  Found {pagination.total} article{pagination.total === 1 ? '' : 's'} from {organizations.find(org => org.id === organizationFilter)?.name || 'selected organization'}
+                  {pagination.totalPages > 1 && (
+                    <> • Showing {articles.length} on this page</>
+                  )}
+                </>
+              ) : (
+                <>
+                  Showing {pagination.total} article{pagination.total === 1 ? '' : 's'} from {new Set(articles.map(a => a.organization.name)).size} organization{new Set(articles.map(a => a.organization.name)).size === 1 ? '' : 's'}
+                  {pagination.totalPages > 1 && (
+                    <> • Page {currentPage} of {pagination.totalPages}</>
+                  )}
+                </>
+              )
             ) : (
-              <>
-                Showing {articles.length} article{articles.length === 1 ? '' : 's'} from {new Set(articles.map(a => a.organization.name)).size} organization{new Set(articles.map(a => a.organization.name)).size === 1 ? '' : 's'}
-              </>
+              <>Loading...</>
             )}
           </Text>
         </Flex>

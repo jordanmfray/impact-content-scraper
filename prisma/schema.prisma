@@ -209,6 +209,8 @@ model ScrapedContent {
   summary                 String?
   markdownContent         String?
   keywords                String[]
+  author                  String?   // Article author from extraction
+  publishedAt             DateTime? // Article publication date from extraction
   sentimentScore          Int?      // -1 to 3
   sentimentReasoning      String?
   selectedForFinalization Boolean   @default(false)

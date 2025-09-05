@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { extractArticlesFromUrls, getExtractJobStatus } from '@/lib/firecrawlExtract'
+import { extractArticlesFromUrls, pollAllExtractJobs } from '@/lib/firecrawlExtractIndividual'
 import { analyzeSentimentScale } from '@/ai-functions/analyzeSentimentScale'
 
-// No longer needed - batch processing eliminates rate limiting issues!
+/**
+ * Helper function to parse various date formats from article extraction
+ */
+function parseArticleDate(dateString?: string): Date | null {
+  if (!dateString) return null
+  
+  try {
+    // Handle common date formats
+    const date = new Date(dateString)
+    
+    // Check if the date is valid and not in the future (more than a day)
+    if (isNaN(date.getTime()) || date > new Date(Date.now() + 24 * 60 * 60 * 1000)) {
+      console.warn(`⚠️ Invalid or future date detected: ${dateString}, using null`)
+      return null
+    }
+    
+    console.log(`📅 Parsed article date: ${dateString} → ${date.toISOString()}`)
+    return date
+  } catch (error) {
+    console.warn(`⚠️ Failed to parse article date: ${dateString}`, error)
+    return null
+  }
+}
 
 // Update URL selection for scraping
 export async function PATCH(request: NextRequest) {
@@ -67,7 +89,7 @@ export async function PATCH(request: NextRequest) {
 // Start batch extraction of selected URLs using Firecrawl Extract
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId } = await request.json()
+    const { sessionId, selectAll } = await request.json()
     
     if (!sessionId) {
       return NextResponse.json({
@@ -76,13 +98,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     
-    // Get session with selected URLs
+    // Get session with URLs (either selected or all, depending on selectAll flag)
     const session = await prisma.discoverySession.findUnique({
       where: { id: sessionId },
       include: {
         organization: { select: { id: true, name: true } },
         discoveredUrls: {
-          where: { selectedForScraping: true },
+          where: selectAll ? {} : { selectedForScraping: true },
           orderBy: { createdAt: 'asc' }
         }
       }
@@ -95,12 +117,24 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
     
-    const selectedUrls = session.discoveredUrls
+    let selectedUrls = session.discoveredUrls
+    
+    // If selectAll is true, auto-select all URLs for scraping
+    if (selectAll && selectedUrls.length > 0) {
+      console.log(`🚀 Auto-selecting ${selectedUrls.length} URLs for automated pipeline`)
+      await prisma.discoveredUrl.updateMany({
+        where: { 
+          discoverySessionId: sessionId,
+          id: { in: selectedUrls.map(url => url.id) }
+        },
+        data: { selectedForScraping: true }
+      })
+    }
     
     if (selectedUrls.length === 0) {
       return NextResponse.json({
         success: false,
-        error: 'No URLs selected for scraping'
+        error: selectAll ? 'No URLs discovered to scrape' : 'No URLs selected for scraping'
       }, { status: 400 })
     }
     
@@ -116,13 +150,14 @@ export async function POST(request: NextRequest) {
     console.log(`🚀 Starting Phase 2: Batch extracting ${selectedUrls.length} URLs for ${session.organization.name}`)
     
     // Extract just the URL strings for batch processing
-    const urls = selectedUrls.map(u => u.url)
+    const urls = selectedUrls.map((u: any) => u.url)
+    console.log(`📤 Sending URLs to Firecrawl:`, urls.map((url: string, i: number) => `${i}: ${url}`).join('\n'))
     
-    // Use Firecrawl Extract for batch processing
+    // Use Firecrawl Extract for individual URL processing  
     const extractResult = await extractArticlesFromUrls(urls, session.organization.name)
     
     if (!extractResult.success) {
-      console.error(`❌ Batch extraction failed: ${extractResult.error}`)
+      console.error(`❌ Individual extraction failed: ${extractResult.error}`)
       
       // Update session status to failed
       await prisma.discoverySession.update({
@@ -135,76 +170,13 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: false,
-        error: `Batch extraction failed: ${extractResult.error}`
+        error: `Individual extraction failed: ${extractResult.error}`
       }, { status: 500 })
     }
     
-    // Handle job-based response (async processing)
-    if (extractResult.jobId) {
-      console.log(`⏳ Extract job started: ${extractResult.jobId}`)
-      console.log(`🔄 Polling for job completion...`)
+    if (!extractResult.jobs || extractResult.jobs.length === 0) {
+      console.log(`⚠️ No extraction jobs were submitted for ${urls.length} URLs`)
       
-      // Simple polling mechanism - check job status every 2 seconds for up to 2 minutes
-      const maxAttempts = 60 // 2 minutes
-      const pollInterval = 2000 // 2 seconds
-      
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval))
-        
-        console.log(`📊 Checking job status (attempt ${attempt}/${maxAttempts})...`)
-        const jobStatus = await getExtractJobStatus(extractResult.jobId)
-        
-        if (jobStatus.success && jobStatus.data && jobStatus.data.length > 0) {
-          console.log(`✅ Job completed! Got ${jobStatus.data.length} articles`)
-          
-          // Process the completed job results
-          extractResult.data = jobStatus.data
-          break
-        } else if (!jobStatus.success && jobStatus.error?.includes('failed')) {
-          console.error(`❌ Job failed: ${jobStatus.error}`)
-          
-          await prisma.discoverySession.update({
-            where: { id: sessionId },
-            data: {
-              status: 'completed',
-              updatedAt: new Date()
-            }
-          })
-          
-          return NextResponse.json({
-            success: false,
-            error: `Extract job failed: ${jobStatus.error}`
-          }, { status: 500 })
-        }
-        
-        // Still processing, continue polling
-        console.log(`⏳ Job still processing... waiting ${pollInterval/1000}s`)
-      }
-      
-      // If we exhausted all attempts and still no data
-      if (!extractResult.data || extractResult.data.length === 0) {
-        console.error(`⏰ Job polling timed out after ${maxAttempts * pollInterval / 1000}s`)
-        
-        await prisma.discoverySession.update({
-          where: { id: sessionId },
-          data: {
-            status: 'completed',
-            updatedAt: new Date()
-          }
-        })
-        
-        return NextResponse.json({
-          success: false,
-          error: 'Extract job timed out - took longer than 2 minutes'
-        }, { status: 500 })
-      }
-    }
-    
-    // Handle immediate results
-    if (!extractResult.data || extractResult.data.length === 0) {
-      console.log(`⚠️ No articles extracted from ${urls.length} URLs`)
-      
-      // Update session status
       await prisma.discoverySession.update({
         where: { id: sessionId },
         data: {
@@ -219,28 +191,108 @@ export async function POST(request: NextRequest) {
         scrapedCount: 0,
         failedCount: urls.length,
         totalProcessed: urls.length,
-        message: 'No articles could be extracted from the provided URLs'
+        message: 'No extraction jobs were successfully submitted'
       })
     }
     
-    console.log(`✅ Batch extraction successful: ${extractResult.data.length} articles extracted`)
+    console.log(`✅ Submitted ${extractResult.jobs.length}/${urls.length} extraction jobs`)
+    console.log(`🔄 Polling ${extractResult.jobs.length} jobs for completion...`)
+    
+    // Poll all jobs concurrently
+    const pollResult = await pollAllExtractJobs(extractResult.jobs)
+    
+    if (!pollResult.success || pollResult.data.length === 0) {
+      console.log(`⚠️ No articles extracted from ${extractResult.jobs.length} jobs`)
+      console.log(`❌ Errors:`, pollResult.errors)
+      
+      await prisma.discoverySession.update({
+        where: { id: sessionId },
+        data: {
+          status: 'analyzing',
+          processedUrls: urls.length,
+          updatedAt: new Date()
+        }
+      })
+      
+      return NextResponse.json({
+        success: true,
+        scrapedCount: 0,
+        failedCount: extractResult.jobs.length,
+        totalProcessed: extractResult.jobs.length,
+        message: 'No articles were successfully extracted from jobs',
+        errors: pollResult.errors
+      })
+    }
+    
+    console.log(`✅ Individual extraction successful: ${pollResult.data.length} articles extracted from ${extractResult.jobs.length} jobs`)
     
     let processedCount = 0
     let successCount = 0
     
+    // Track processed URLs to prevent duplicates
+    const processedUrlIds = new Set<string>()
+    
     // Process each extracted article
-    for (const article of extractResult.data) {
+    for (const article of pollResult.data) {
       try {
         // Find the corresponding discovered URL
-        const discoveredUrl = selectedUrls.find(u => u.url === article.url)
+        const discoveredUrl = selectedUrls.find((u: any) => u.url === article.url)
         
         if (!discoveredUrl) {
           console.warn(`⚠️ Could not find discovered URL for: ${article.url}`)
           continue
         }
         
+        // Check if we've already processed this URL (prevent duplicates)
+        if (processedUrlIds.has(discoveredUrl.id)) {
+          console.warn(`⚠️ Skipping duplicate processing for URL: ${article.url}`)
+          continue
+        }
+        
+        // Check if ScrapedContent already exists for this URL
+        const existingContent = await prisma.scrapedContent.findUnique({
+          where: { discoveredUrlId: discoveredUrl.id }
+        })
+        
+        if (existingContent) {
+          console.log(`📋 ScrapedContent already exists for URL: ${article.url} - updating instead`)
+          // Update existing record
+          await prisma.scrapedContent.update({
+            where: { discoveredUrlId: discoveredUrl.id },
+            data: {
+              title: article.title,
+              summary: article.summary,
+              markdownContent: article.content,
+              keywords: article.keywords || [],
+              author: article.author || null,
+              publishedAt: parseArticleDate(article.publish_date),
+              sentimentScore: null, // Will be updated after sentiment analysis
+              sentimentReasoning: null
+            }
+          })
+        } else {
+          // Create new record
+          await prisma.scrapedContent.create({
+            data: {
+              discoveredUrlId: discoveredUrl.id,
+              discoverySessionId: sessionId,
+              title: article.title,
+              summary: article.summary,
+              markdownContent: article.content,
+              keywords: article.keywords || [],
+              author: article.author || null,
+              publishedAt: parseArticleDate(article.publish_date),
+              sentimentScore: null, // Will be updated after sentiment analysis
+              sentimentReasoning: null
+            }
+          })
+        }
+        
+        // Mark this URL as processed
+        processedUrlIds.add(discoveredUrl.id)
+        
         // Analyze sentiment using our enhanced scale
-        console.log(`🧠 Analyzing sentiment for: ${article.title.substring(0, 50)}...`)
+        console.log(`🧠 Analyzing sentiment for: ${article.title?.substring(0, 50) || 'No title'}...`)
         const sentimentResult = await analyzeSentimentScale(
           article.content, 
           session.organization.name,
@@ -249,15 +301,10 @@ export async function POST(request: NextRequest) {
         
         console.log(`📊 Sentiment: ${sentimentResult.sentimentScore} - ${sentimentResult.reasoning.substring(0, 60)}...`)
         
-        // Save scraped content to database
-        await prisma.scrapedContent.create({
+        // Update with sentiment analysis results
+        await prisma.scrapedContent.update({
+          where: { discoveredUrlId: discoveredUrl.id },
           data: {
-            discoveredUrlId: discoveredUrl.id,
-            discoverySessionId: sessionId,
-            title: article.title,
-            summary: article.summary,
-            markdownContent: article.content,
-            keywords: article.keywords || [],
             sentimentScore: sentimentResult.sentimentScore,
             sentimentReasoning: sentimentResult.reasoning
           }
@@ -275,7 +322,7 @@ export async function POST(request: NextRequest) {
         console.error(`❌ Failed to process article: ${article.title}`, error)
         
         // Find and update the URL status
-        const discoveredUrl = selectedUrls.find(u => u.url === article.url)
+        const discoveredUrl = selectedUrls.find((u: any) => u.url === article.url)
         if (discoveredUrl) {
           await prisma.discoveredUrl.update({
             where: { id: discoveredUrl.id },
@@ -288,8 +335,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Mark any unprocessed URLs as failed
-    const failedUrls = selectedUrls.filter(u => 
-      !extractResult.data!.some(article => article.url === u.url)
+    const failedUrls = selectedUrls.filter((u: any) => 
+      !pollResult.data.some(article => article.url === u.url)
     )
     
     for (const failedUrl of failedUrls) {
@@ -318,7 +365,7 @@ export async function POST(request: NextRequest) {
       scrapedCount: successCount,
       failedCount: failedCount,
       totalProcessed: selectedUrls.length,
-      extractedArticles: extractResult.data.length
+      extractedArticles: pollResult.data.length
     })
     
   } catch (error) {

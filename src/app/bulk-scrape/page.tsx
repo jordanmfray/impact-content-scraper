@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Box, Heading, Text, Flex, Button, Select, TextArea, Card, Badge, Spinner } from '@radix-ui/themes'
+import { Box, Heading, Text, Flex, Button, Select, TextArea, Card, Badge, Spinner, Checkbox, Switch } from '@radix-ui/themes'
 import * as Accordion from '@radix-ui/react-accordion'
 import { CheckCircle } from "@phosphor-icons/react/dist/ssr/CheckCircle"
 import { XCircle } from "@phosphor-icons/react/dist/ssr/XCircle"
@@ -17,9 +17,14 @@ interface Organization {
 
 interface ScrapeResult {
   url: string
-  status: 'pending' | 'processing' | 'success' | 'error' | 'duplicate'
+  status: 'pending' | 'processing' | 'success' | 'error' | 'duplicate' | 'skipped'
   message?: string
   articleId?: string
+  title?: string
+  sentimentScore?: number
+  imageCount?: number
+  ogImage?: string | null
+  processingTime?: number
 }
 
 interface DiscoveryBatch {
@@ -46,6 +51,12 @@ export default function BulkScrapePage() {
   const resultsRef = useRef<HTMLDivElement>(null)
   const [concurrency, setConcurrency] = useState(3)
   const [batchDelay, setBatchDelay] = useState(2000)
+  
+  // Enhanced scraping options
+  const [useEnhancedScraping, setUseEnhancedScraping] = useState(true)
+  const [enableSentimentAnalysis, setEnableSentimentAnalysis] = useState(true)
+  const [enableImageExtraction, setEnableImageExtraction] = useState(true)
+  const [enableTitleFormatting, setEnableTitleFormatting] = useState(true)
   
   // Discovery batch state
   const [discoveryBatches, setDiscoveryBatches] = useState<DiscoveryBatch[]>([])
@@ -204,20 +215,32 @@ export default function BulkScrapePage() {
     setResults(initialResults)
 
     try {
-      console.log(`🚀 Starting parallel bulk scrape: ${urlList.length} URLs, concurrency: ${concurrency}, delay: ${batchDelay}ms`)
+      const apiEndpoint = useEnhancedScraping ? '/api/bulk-scrape-enhanced' : '/api/bulk-scrape'
+      console.log(`🚀 Starting ${useEnhancedScraping ? 'enhanced' : 'standard'} bulk scrape: ${urlList.length} URLs`)
       
-      // Use the new parallel bulk scrape API
-      const response = await fetch('/api/bulk-scrape', {
+      const requestBody = useEnhancedScraping ? {
+        organizationId: selectedOrgId,
+        urls: urlList,
+        options: {
+          enableSentimentAnalysis,
+          enableImageExtraction,
+          enableTitleFormatting,
+          concurrency,
+          batchDelay
+        }
+      } : {
+        organizationId: selectedOrgId,
+        urls: urlList,
+        concurrency,
+        batchDelay
+      }
+      
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          organizationId: selectedOrgId,
-          urls: urlList,
-          concurrency,
-          batchDelay
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data = await response.json()
@@ -273,6 +296,8 @@ export default function BulkScrapePage() {
         return <CheckCircle size={16} className="text-green-500" />
       case 'duplicate':
         return <Warning size={16} className="text-orange-500" />
+      case 'skipped':
+        return <Warning size={16} className="text-gray-500" />
       case 'error':
         return <XCircle size={16} className="text-red-500" />
       default:
@@ -290,6 +315,8 @@ export default function BulkScrapePage() {
         return 'green'
       case 'duplicate':
         return 'orange'
+      case 'skipped':
+        return 'gray'
       case 'error':
         return 'red'
       default:
@@ -552,6 +579,84 @@ https://example.com/article-3"
               </Box>
             </Flex>
 
+            {/* AI Enhancement Options */}
+            <Flex direction="column" gap="3">
+              <Flex align="center" gap="3">
+                <Text size="3" weight="bold">🤖 AI Enhancement Pipeline</Text>
+                <Switch 
+                  checked={useEnhancedScraping} 
+                  onCheckedChange={setUseEnhancedScraping}
+                  size="2"
+                />
+                <Text size="2" color={useEnhancedScraping ? 'green' : 'gray'}>
+                  {useEnhancedScraping ? 'Enhanced' : 'Standard'}
+                </Text>
+              </Flex>
+
+              {useEnhancedScraping && (
+                <Flex direction="column" gap="3" style={{ 
+                  padding: '16px', 
+                  backgroundColor: 'var(--green-2)', 
+                  borderRadius: 'var(--radius-2)',
+                  border: '1px solid var(--green-6)' 
+                }}>
+                  <Text size="2" color="green" weight="medium">
+                    Enhanced scraping includes Phase 2 (content analysis) + Phase 3 (AI finalization)
+                  </Text>
+                  
+                  <Flex direction="column" gap="2">
+                    <Flex align="center" gap="2">
+                      <Checkbox 
+                        checked={enableSentimentAnalysis} 
+                        onCheckedChange={setEnableSentimentAnalysis}
+                      />
+                      <Text size="2">📊 <strong>Sentiment Analysis</strong> - Analyze organization relevance (-1 to 3 scale)</Text>
+                    </Flex>
+                    
+                    <Flex align="center" gap="2">
+                      <Checkbox 
+                        checked={enableImageExtraction} 
+                        onCheckedChange={setEnableImageExtraction}
+                      />
+                      <Text size="2">🖼️ <strong>Image Extraction</strong> - Extract & sort images, select best OG image</Text>
+                    </Flex>
+                    
+                    <Flex align="center" gap="2">
+                      <Checkbox 
+                        checked={enableTitleFormatting} 
+                        onCheckedChange={setEnableTitleFormatting}
+                      />
+                      <Text size="2">✏️ <strong>Title Formatting</strong> - AI-powered title cleanup & optimization</Text>
+                    </Flex>
+                  </Flex>
+
+                  <Box style={{ 
+                    padding: '8px', 
+                    backgroundColor: 'var(--amber-2)', 
+                    borderRadius: 'var(--radius-1)',
+                    border: '1px solid var(--amber-6)'
+                  }}>
+                    <Text size="1" color="amber">
+                      <strong>Note:</strong> Enhanced scraping takes longer but creates higher-quality articles with rich metadata, sentiment analysis, and curated images.
+                    </Text>
+                  </Box>
+                </Flex>
+              )}
+
+              {!useEnhancedScraping && (
+                <Box style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'var(--gray-2)', 
+                  borderRadius: 'var(--radius-2)',
+                  border: '1px solid var(--gray-6)'
+                }}>
+                  <Text size="2" color="gray">
+                    <strong>Standard scraping:</strong> Basic content extraction only. No sentiment analysis, image processing, or AI enhancements.
+                  </Text>
+                </Box>
+              )}
+            </Flex>
+
             {/* Action Buttons */}
             <Flex justify="start" gap="3">
               <Button 
@@ -565,7 +670,7 @@ https://example.com/article-3"
                   Processing ({results.filter(r => r.status === 'success' || r.status === 'error' || r.status === 'duplicate').length}/{results.length})
                 </>
               ) : (
-                'Start Real-Time Scraping'
+                useEnhancedScraping ? 'Start Enhanced AI Scraping' : 'Start Standard Scraping'
               )}
               </Button>
               
@@ -631,16 +736,55 @@ https://example.com/article-3"
               <Flex direction="column" gap="2">
                 {results.map((result, index) => (
                   <Card key={index} style={{ padding: '12px' }}>
-                    <Flex align="center" gap="3">
-                      {getStatusIcon(result.status)}
-                      <Badge color={getStatusColor(result.status)} variant="soft">
-                        {result.status}
-                      </Badge>
-                      <Text size="2" style={{ flex: 1, fontFamily: 'monospace' }}>
-                        {result.url}
-                      </Text>
+                    <Flex direction="column" gap="2">
+                      <Flex align="center" gap="3">
+                        {getStatusIcon(result.status)}
+                        <Badge color={getStatusColor(result.status)} variant="soft">
+                          {result.status}
+                        </Badge>
+                        <Text size="2" style={{ flex: 1, fontFamily: 'monospace' }}>
+                          {result.url}
+                        </Text>
+                        {result.processingTime && (
+                          <Text size="1" color="gray">
+                            {result.processingTime}ms
+                          </Text>
+                        )}
+                      </Flex>
+                      
+                      {/* Enhanced info for successful results */}
+                      {result.status === 'success' && useEnhancedScraping && (
+                        <Flex gap="4" wrap="wrap" style={{ marginLeft: '24px' }}>
+                          {result.title && (
+                            <Text size="1" style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              📝 <strong>{result.title}</strong>
+                            </Text>
+                          )}
+                          {result.sentimentScore !== undefined && (
+                            <Badge variant="soft" color={
+                              result.sentimentScore === 3 ? 'purple' :
+                              result.sentimentScore === 2 ? 'green' :
+                              result.sentimentScore === 1 ? 'blue' :
+                              result.sentimentScore === -1 ? 'red' : 'gray'
+                            }>
+                              📊 Score: {result.sentimentScore}
+                            </Badge>
+                          )}
+                          {result.imageCount !== undefined && (
+                            <Badge variant="soft" color="blue">
+                              🖼️ Images: {result.imageCount}
+                            </Badge>
+                          )}
+                          {result.ogImage && (
+                            <Badge variant="soft" color="green">
+                              🎯 OG Image Set
+                            </Badge>
+                          )}
+                        </Flex>
+                      )}
+                      
                       {result.message && (
-                        <Text size="2" color="gray">
+                        <Text size="2" color="gray" style={{ marginLeft: '24px' }}>
                           {result.message}
                         </Text>
                       )}
@@ -655,7 +799,7 @@ https://example.com/article-3"
         {/* Instructions */}
         <Card style={{ padding: '20px', backgroundColor: 'var(--blue-2)', border: '1px solid var(--blue-6)' }}>
           <Flex direction="column" gap="3">
-            <Heading size="4" style={{ color: 'var(--blue-11)' }}>✨ Real-Time Bulk Scraping</Heading>
+            <Heading size="4" style={{ color: 'var(--blue-11)' }}>✨ Enhanced Bulk Article Scraping</Heading>
             <Flex direction="column" gap="2">
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
                 1. <strong>Select Organization:</strong> Choose the organization these articles belong to
@@ -664,13 +808,16 @@ https://example.com/article-3"
                 2. <strong>Add URLs:</strong> Paste URLs one per line (@ prefix is optional and will be removed)
               </Text>
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
-                3. <strong>Start Real-Time Scraping:</strong> URLs are processed one by one with live updates
+                3. <strong>Choose Enhancement Level:</strong> Enable AI features for richer articles
               </Text>
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
-                4. <strong>Watch Progress:</strong> See results appear instantly as each article is scraped
+                4. <strong>Start Scraping:</strong> URLs are processed with live updates
               </Text>
               <Text size="2" style={{ color: 'var(--blue-11)' }}>
-                💡 <strong>Tip:</strong> Articles appear on the homepage immediately after successful scraping
+                💡 <strong>Enhanced Features:</strong> Sentiment analysis, image extraction, and AI title optimization
+              </Text>
+              <Text size="2" style={{ color: 'var(--blue-11)' }}>
+                🚀 <strong>Tip:</strong> Enhanced articles have better metadata and are ready for immediate publishing
               </Text>
             </Flex>
           </Flex>

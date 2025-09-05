@@ -8,16 +8,27 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const status = searchParams.get('status') // 'all', 'draft', 'published', 'failed', 'processing'
     const organizationId = searchParams.get('organizationId') // organization filter
+    const ids = searchParams.get('ids') // comma-separated list of article IDs
     
     const skip = (page - 1) * limit
 
     // Build where clause based on filters
     const whereClause: any = {}
-    if (status && status !== 'all') {
-      whereClause.status = status
-    }
-    if (organizationId && organizationId !== 'all') {
-      whereClause.organizationId = organizationId
+    
+    // If specific IDs are provided, filter by those (takes priority over other filters)
+    if (ids) {
+      const articleIds = ids.split(',').filter(id => id.trim().length > 0)
+      if (articleIds.length > 0) {
+        whereClause.id = { in: articleIds }
+      }
+    } else {
+      // Apply other filters only if not filtering by specific IDs
+      if (status && status !== 'all') {
+        whereClause.status = status
+      }
+      if (organizationId && organizationId !== 'all') {
+        whereClause.organizationId = organizationId
+      }
     }
 
     // Get total count for pagination

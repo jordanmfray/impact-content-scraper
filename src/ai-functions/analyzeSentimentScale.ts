@@ -53,40 +53,84 @@ Be STRICT with scoring:
   try {
     console.log(`🧠 Analyzing sentiment for ${organizationName}...`)
     
-    const completion = await openai.beta.chat.completions.parse({
+    const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are an expert content analyst specializing in organizational sentiment analysis and social impact assessment.'
+          content: 'You are an expert content analyst specializing in organizational sentiment analysis and social impact assessment. Always respond with valid JSON only.'
         },
         {
           role: 'user', 
-          content: prompt
+          content: prompt + `
+
+REQUIRED OUTPUT FORMAT - Return ONLY a valid JSON object with exactly these fields:
+{
+  "sentimentScore": <number from -1 to 3>,
+  "reasoning": "<detailed explanation>",
+  "organizationMentions": ["<direct quote 1>", "<direct quote 2>"],
+  "mainFocus": "<what the article is mainly about>",
+  "socialImpactIndicators": ["<evidence 1>", "<evidence 2>"]
+}
+
+Do not include any other text, just the JSON object.`
         }
       ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'sentiment_analysis',
-          schema: sentimentAnalysisSchema,
-        }
-      },
+      response_format: { type: 'json_object' },
       temperature: 0.1
     })
 
-    const result = completion.choices[0].message.parsed
-
-    if (!result) {
-      throw new Error('Failed to parse sentiment analysis response')
+    const rawContent = completion.choices[0].message.content
+    if (!rawContent) {
+      throw new Error('No content in sentiment analysis response')
     }
 
+    console.log('🔍 Raw OpenAI response:', rawContent)
+
+    // Parse and validate the JSON response
+    let parsedJson
+    try {
+      parsedJson = JSON.parse(rawContent)
+      console.log('📝 Parsed JSON:', parsedJson)
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError)
+      throw new Error(`Failed to parse JSON: ${parseError}`)
+    }
+
+    // Validate the parsed JSON against our schema
+    const validationResult = sentimentAnalysisSchema.safeParse(parsedJson)
+    
+    if (!validationResult.success) {
+      console.error('❌ Zod validation failed:', validationResult.error.issues)
+      console.log('🔍 Invalid data structure:', parsedJson)
+      
+      // Try to construct a fallback response from whatever we got
+      const fallbackScore = typeof parsedJson?.sentimentScore === 'number' 
+        ? Math.max(-1, Math.min(3, parsedJson.sentimentScore))
+        : 0
+
+      return {
+        sentimentScore: fallbackScore,
+        reasoning: parsedJson?.reasoning || 'OpenAI response parsing failed - using fallback analysis',
+        organizationMentions: Array.isArray(parsedJson?.organizationMentions) 
+          ? parsedJson.organizationMentions 
+          : [],
+        mainFocus: parsedJson?.mainFocus || 'Unable to determine main focus',
+        socialImpactIndicators: Array.isArray(parsedJson?.socialImpactIndicators)
+          ? parsedJson.socialImpactIndicators
+          : []
+      }
+    }
+
+    const result = validationResult.data
     console.log(`✅ Sentiment analysis complete: ${result.sentimentScore} (${result.reasoning.substring(0, 100)}...)`)
     
     return result
 
   } catch (error) {
     console.error('Sentiment analysis error:', error)
+    console.log('📄 Content that failed:', content.substring(0, 200) + '...')
+    console.log('🏢 Organization:', organizationName)
     
     // Fallback analysis
     const contentLower = content.toLowerCase()
