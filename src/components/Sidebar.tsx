@@ -8,7 +8,6 @@ import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass"
 import { Rows } from "@phosphor-icons/react/dist/ssr/Rows";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr/ShieldCheck";
 import { GitBranch } from "@phosphor-icons/react/dist/ssr/GitBranch";
-import { Rocket } from "@phosphor-icons/react/dist/ssr/Rocket";
 import Image from "next/image";
 
 export function Sidebar() {
@@ -183,33 +182,6 @@ export function Sidebar() {
             </Box>
           </Link>
 
-          {/* Automated Pipeline */}
-          <Link href="/automated-pipeline">
-            <Box
-              style={{
-                padding: 12,
-                borderRadius: 8,
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-              }}
-              className="nav-item"
-            >
-              <Flex align="center" gap="3">
-                <Box style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Rocket size={20} color="#171717" />
-                </Box>
-                <Text size="3" weight="medium" color="gray" style={{
-                  color: '#171717',
-                  fontFamily: 'F37Jan',
-                  fontSize: 16,
-                  fontWeight: 400,
-                  lineHeight: '24px',
-                }}>
-                  Automated Pipeline
-                </Text>
-              </Flex>
-            </Box>
-          </Link>
 
           {/* Supabase Studio */}
           <Link href="http://localhost:54323" target="_blank">
