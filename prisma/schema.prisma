@@ -21,10 +21,7 @@ model Organization {
   
   // Relations
   articles      Article[]
-  aiRuns        AiRun[]
-  urlDiscoveryBatches UrlDiscoveryBatch[]
   discoverySessions   DiscoverySession[]
-  pipelineArticles    PipelineArticle[]
 }
 
 model Article {
@@ -59,106 +56,12 @@ model Article {
   
   // Relations
   organization   Organization @relation(fields: [organizationId], references: [id])
-  rawDocument    RawDocument?
-  enrichment     Enrichment?
-  aiRuns         AiRun[]
   
   @@index([organizationId])
   @@index([publishedAt])
   @@index([status])
 }
 
-model RawDocument {
-  id            String   @id @default(cuid())
-  articleId     String   @unique
-  url           String
-  html          String?
-  markdown      String?
-  text          String?
-  httpStatus    Int?
-  fetchedAt     DateTime @default(now())
-  
-  // Relations
-  article       Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-}
-
-model Enrichment {
-  id            String   @id @default(cuid())
-  articleId     String   @unique
-  title         String?
-  author        String?
-  publishedAt   DateTime?
-  summary       String?
-  keywords      String[]
-  sentiment     String?   // pos | neu | neg
-  entitiesJson  Json?
-  canonicalUrl  String?
-  
-  // Relations
-  article       Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-}
-
-model AiRun {
-  id            String   @id @default(cuid())
-  
-  // Run metadata
-  status        String   // running | completed | failed
-  startedAt     DateTime @default(now())
-  completedAt   DateTime?
-  duration      Int?     // milliseconds
-  
-  // Input data
-  inputUrl      String
-  organizationId String
-  
-  // Pipeline state and steps
-  stepsData     Json     // Stores the complete pipeline state and step details
-  
-  // Output data
-  articleId     String?
-  success       Boolean  @default(false)
-  errorMessage  String?
-  
-  // Relations
-  organization  Organization @relation(fields: [organizationId], references: [id])
-  article       Article?     @relation(fields: [articleId], references: [id])
-  
-  @@index([status])
-  @@index([startedAt])
-  @@index([organizationId])
-}
-
-model UrlDiscoveryBatch {
-  id                    String   @id @default(cuid())
-  organizationId        String
-  
-  // Batch metadata
-  status                String   // discovering | ready_for_processing | processing | completed | failed
-  timeframe            Int      // days to look back for articles
-  
-  // Discovery results
-  discoveredUrls       String[] // URLs found during discovery
-  totalUrls            Int      @default(0)
-  processedUrls        Int      @default(0)
-  successfulUrls       Int      @default(0)
-  failedUrls           Int      @default(0)
-  
-  // Processing results
-  processingResults    Json?    // Detailed results of URL processing
-  
-  // Timestamps
-  startedAt            DateTime @default(now())
-  discoveredAt         DateTime?
-  processingStartedAt  DateTime?
-  completedAt          DateTime?
-  
-  // Relations
-  organization         Organization @relation(fields: [organizationId], references: [id])
-  
-  @@index([organizationId])
-  @@index([status])
-  @@index([startedAt])
-}
 
 // ------------------ NEW PIPELINE TABLES ------------------
 
@@ -177,7 +80,6 @@ model DiscoverySession {
   organization    Organization    @relation(fields: [organizationId], references: [id])
   discoveredUrls  DiscoveredUrl[]
   scrapedContent  ScrapedContent[]
-  pipelineArticles PipelineArticle[]
   
   @@index([organizationId])
   @@index([status])
@@ -219,34 +121,7 @@ model ScrapedContent {
   // Relations
   discoveredUrl           DiscoveredUrl    @relation(fields: [discoveredUrlId], references: [id], onDelete: Cascade)
   discoverySession        DiscoverySession @relation(fields: [discoverySessionId], references: [id], onDelete: Cascade)
-  pipelineArticle         PipelineArticle?
   
   @@index([discoverySessionId])
 }
 
-model PipelineArticle {
-  id                  String    @id @default(cuid())
-  scrapedContentId    String    @unique
-  discoverySessionId  String
-  organizationId      String
-  finalTitle          String
-  summary             String?
-  content             String
-  url                 String
-  ogImage             String?
-  extractedImages     String[]
-  keywords            String[]
-  sentimentScore      Int?
-  urlType             String    // news | post
-  status              String    @default("ready") // ready | published
-  createdAt           DateTime  @default(now())
-  publishedAt         DateTime?
-  
-  // Relations
-  scrapedContent      ScrapedContent   @relation(fields: [scrapedContentId], references: [id], onDelete: Cascade)
-  discoverySession    DiscoverySession @relation(fields: [discoverySessionId], references: [id], onDelete: Cascade)
-  organization        Organization     @relation(fields: [organizationId], references: [id])
-  
-  @@index([discoverySessionId])
-  @@index([organizationId])
-}
