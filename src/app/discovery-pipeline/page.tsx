@@ -329,10 +329,10 @@ export default function DiscoveryPipelinePage() {
   // Fetch organizations
   const fetchOrganizations = useCallback(async () => {
     try {
-      const response = await fetch('/api/organizations?requireNewsUrl=true&includeArticleCounts=true')
+      const response = await fetch('/api/organizations?includeArticleCounts=true')
       const data = await response.json()
       if (data.success) {
-        // Organizations are already filtered by newsUrl at the API level
+        // Now includes all organizations, not just those with newsUrl
         setOrganizations(data.organizations)
       }
     } catch (error) {
@@ -629,7 +629,14 @@ export default function DiscoveryPipelinePage() {
                   {organizations.map((org) => (
                     <Select.Item key={org.id} value={org.id}>
                       <Flex justify="between" align="center" width="100%">
-                        <Text>{org.name}</Text>
+                        <Flex align="center" gap="2">
+                          <Text>{org.name}</Text>
+                          {!org.newsUrl && (
+                            <Badge variant="soft" color="orange" size="1">
+                              Manual only
+                            </Badge>
+                          )}
+                        </Flex>
                         <Badge variant="soft" color="blue" size="1">
                           {org.publishedArticleCount || 0} published
                         </Badge>
@@ -641,25 +648,40 @@ export default function DiscoveryPipelinePage() {
               
               {selectedOrgId !== 'all' && (
                 <Flex align="center" gap="2">
-                  <Button 
-                    onClick={startPhase1} 
-                    loading={phase1Loading}
-                    disabled={phase1Loading || useManualUrls}
-                  >
-                    <Play size={16} />
-                    Start New Discovery
-                  </Button>
-                  
-                  <Text size="2" color="gray">or</Text>
-                  
-                  <Button 
-                    variant={useManualUrls ? 'solid' : 'outline'}
-                    onClick={() => setUseManualUrls(!useManualUrls)}
-                    disabled={phase1Loading}
-                  >
-                    <Link size={16} />
-                    Manual URLs
-                  </Button>
+                  {(() => {
+                    const selectedOrg = organizations.find(o => o.id === selectedOrgId)
+                    const hasNewsUrl = selectedOrg?.newsUrl
+                    
+                    return (
+                      <>
+                        <Button 
+                          onClick={startPhase1} 
+                          loading={phase1Loading}
+                          disabled={phase1Loading || useManualUrls || !hasNewsUrl}
+                        >
+                          <Play size={16} />
+                          Start New Discovery
+                        </Button>
+                        
+                        {!hasNewsUrl && !useManualUrls && (
+                          <Text size="1" color="orange" style={{ fontStyle: 'italic' }}>
+                            No news URL configured - use manual input
+                          </Text>
+                        )}
+                        
+                        <Text size="2" color="gray">or</Text>
+                        
+                        <Button 
+                          variant={useManualUrls ? 'solid' : 'outline'}
+                          onClick={() => setUseManualUrls(!useManualUrls)}
+                          disabled={phase1Loading}
+                        >
+                          <Link size={16} />
+                          Manual URLs
+                        </Button>
+                      </>
+                    )
+                  })()}
                 </Flex>
               )}
             </Flex>
