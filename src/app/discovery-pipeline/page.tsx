@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Heading, Text, Flex, Box, Card, Button, Select, Table, Checkbox, Badge, Progress, Separator, IconButton } from '@radix-ui/themes'
-import { Play, CheckCircle, Clock, Eye, Sparkle, ArrowRight, PencilSimple, Trash, X } from '@phosphor-icons/react'
+import { Heading, Text, Flex, Box, Card, Button, Select, Table, Checkbox, Badge, Progress, Separator, IconButton, TextArea } from '@radix-ui/themes'
+import { Play, CheckCircle, Clock, Eye, Sparkle, ArrowRight, PencilSimple, Trash, X, Link } from '@phosphor-icons/react'
 
 interface Organization {
   id: string
@@ -95,6 +95,11 @@ export default function DiscoveryPipelinePage() {
   const [discoveredUrls, setDiscoveredUrls] = useState<DiscoveredUrl[]>([])
   const [selectedUrlIds, setSelectedUrlIds] = useState<Set<string>>(new Set())
   const [phase1Loading, setPhase1Loading] = useState(false)
+  
+  // Manual URL input state
+  const [manualUrls, setManualUrls] = useState('')
+  const [useManualUrls, setUseManualUrls] = useState(false)
+  const [manualUrlsLoading, setManualUrlsLoading] = useState(false)
   
   // Phase 2 state
   const [scrapedContent, setScrapedContent] = useState<ScrapedContent[]>([])
@@ -389,6 +394,68 @@ export default function DiscoveryPipelinePage() {
       setPhase1Loading(false)
     }
   }
+
+  // Process manual URLs (skip Phase 1)
+  const processManualUrls = async () => {
+    if (selectedOrgId === 'all' || !manualUrls.trim()) return
+    
+    const org = organizations.find(o => o.id === selectedOrgId)
+    if (!org) return
+
+    setManualUrlsLoading(true)
+    try {
+      // Parse URLs from textarea
+      const urlList = manualUrls
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url && url.startsWith('http'))
+
+      if (urlList.length === 0) {
+        throw new Error('No valid URLs found. Please enter URLs starting with http:// or https://')
+      }
+
+      console.log(`📝 Processing ${urlList.length} manual URLs...`)
+
+      // Create discovery session with manual URLs
+      const response = await fetch('/api/discovery/phase1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: selectedOrgId,
+          newsUrl: org.newsUrl || 'manual-input', // Fallback for orgs without newsUrl
+          manualUrls: urlList // Pass the manual URLs
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        console.log(`✅ Manual URLs processed: ${urlList.length} URLs added`)
+        // Fetch the created session
+        await fetchSessions(selectedOrgId)
+        // Load the URLs and jump to Phase 2
+        await loadDiscoveredUrls(data.sessionId)
+        
+        // Auto-select all URLs and proceed to Phase 2
+        setTimeout(() => {
+          // Set the active session
+          const createdSession = sessions.find(s => s.id === data.sessionId)
+          if (createdSession) {
+            setActiveSession(createdSession)
+            // URLs are already pre-selected in the API, so start Phase 2 directly
+            startPhase2()
+          }
+        }, 1000) // Give a bit more time for state to update
+      } else {
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error
+        throw new Error(errorMsg)
+      }
+    } catch (error) {
+      console.error('Manual URL processing failed:', error)
+      alert(`Failed to process manual URLs: ${error}`)
+    } finally {
+      setManualUrlsLoading(false)
+    }
+  }
   
   // Load discovered URLs for a session
   const loadDiscoveredUrls = async (sessionId: string) => {
@@ -573,16 +640,83 @@ export default function DiscoveryPipelinePage() {
               </Select.Root>
               
               {selectedOrgId !== 'all' && (
-                <Button 
-                  onClick={startPhase1} 
-                  loading={phase1Loading}
-                  disabled={phase1Loading}
-                >
-                  <Play size={16} />
-                  Start New Discovery
-                </Button>
+                <Flex align="center" gap="2">
+                  <Button 
+                    onClick={startPhase1} 
+                    loading={phase1Loading}
+                    disabled={phase1Loading || useManualUrls}
+                  >
+                    <Play size={16} />
+                    Start New Discovery
+                  </Button>
+                  
+                  <Text size="2" color="gray">or</Text>
+                  
+                  <Button 
+                    variant={useManualUrls ? 'solid' : 'outline'}
+                    onClick={() => setUseManualUrls(!useManualUrls)}
+                    disabled={phase1Loading}
+                  >
+                    <Link size={16} />
+                    Manual URLs
+                  </Button>
+                </Flex>
               )}
             </Flex>
+
+            {/* Manual URL Input Section */}
+            {selectedOrgId !== 'all' && useManualUrls && (
+              <Flex direction="column" gap="3" style={{ 
+                marginTop: '16px', 
+                padding: '16px', 
+                border: '1px solid var(--gray-6)', 
+                borderRadius: '8px',
+                backgroundColor: 'var(--gray-2)'
+              }}>
+                <Flex justify="between" align="center">
+                  <Text size="3" weight="bold">Manual URL Input</Text>
+                  <IconButton
+                    variant="ghost"
+                    size="1"
+                    onClick={() => {
+                      setUseManualUrls(false)
+                      setManualUrls('')
+                    }}
+                  >
+                    <X size={14} />
+                  </IconButton>
+                </Flex>
+                
+                <Text size="2" color="gray">
+                  Enter URLs to scrape (one per line). This will skip automatic discovery and go directly to scraping.
+                </Text>
+                
+                <TextArea
+                  placeholder="https://example.com/article-1
+https://example.com/article-2
+https://example.com/article-3"
+                  value={manualUrls}
+                  onChange={(e) => setManualUrls(e.target.value)}
+                  rows={6}
+                  style={{ fontFamily: 'monospace', fontSize: '14px' }}
+                />
+                
+                {manualUrls.trim() && (
+                  <Text size="2" color="gray">
+                    {manualUrls.split('\n').filter(url => url.trim() && url.startsWith('http')).length} valid URLs found
+                  </Text>
+                )}
+                
+                <Button 
+                  onClick={processManualUrls}
+                  loading={manualUrlsLoading}
+                  disabled={manualUrlsLoading || !manualUrls.trim()}
+                >
+                  <ArrowRight size={16} />
+                  Process URLs & Skip to Scraping
+                </Button>
+              </Flex>
+            )}
           </Flex>
         </Card>
         

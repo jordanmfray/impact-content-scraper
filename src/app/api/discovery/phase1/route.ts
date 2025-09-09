@@ -266,7 +266,7 @@ async function extractArticleUrlsWithClassification(newsUrl: string, orgName: st
 
 export async function POST(request: NextRequest) {
   try {
-    const { organizationId, newsUrl } = await request.json()
+    const { organizationId, newsUrl, manualUrls } = await request.json()
     
     if (!organizationId || !newsUrl) {
       return NextResponse.json({
@@ -297,13 +297,33 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    console.log(`🚀 Starting Phase 1 discovery for ${organization.name}`)
-    console.log(`📡 News URL: ${newsUrl}`)
-    
-    // Discover URLs
-    console.log('📄 Calling extractArticleUrlsWithClassification...')
-    const discoveredUrls = await extractArticleUrlsWithClassification(newsUrl, organization.name)
-    console.log(`🔗 Discovery returned ${discoveredUrls.length} URLs`)
+    let discoveredUrls: any[] = []
+
+    if (manualUrls && Array.isArray(manualUrls)) {
+      // Process manual URLs (skip discovery)
+      console.log(`📝 Processing ${manualUrls.length} manual URLs for ${organization.name}`)
+      
+      discoveredUrls = manualUrls.map((url: string) => {
+        const urlObj = new URL(url)
+        return {
+          url,
+          urlType: 'post' as const, // Default to 'post' for manual URLs
+          domain: urlObj.hostname,
+          titlePreview: `Manual: ${urlObj.pathname}`
+        }
+      })
+      
+      console.log(`🔗 Manual URLs processed: ${discoveredUrls.length} URLs`)
+    } else {
+      // Standard discovery process
+      console.log(`🚀 Starting Phase 1 discovery for ${organization.name}`)
+      console.log(`📡 News URL: ${newsUrl}`)
+      
+      // Discover URLs
+      console.log('📄 Calling extractArticleUrlsWithClassification...')
+      discoveredUrls = await extractArticleUrlsWithClassification(newsUrl, organization.name)
+      console.log(`🔗 Discovery returned ${discoveredUrls.length} URLs`)
+    }
     
     // Save discovered URLs to database
     await Promise.all(
@@ -314,7 +334,8 @@ export async function POST(request: NextRequest) {
             url: urlData.url,
             urlType: urlData.urlType,
             domain: urlData.domain,
-            titlePreview: urlData.titlePreview
+            titlePreview: urlData.titlePreview,
+            selectedForScraping: manualUrls ? true : false // Auto-select manual URLs
           }
         })
       )
